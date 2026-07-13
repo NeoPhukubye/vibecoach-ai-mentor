@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Sparkles, Mail, Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,28 +19,12 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/" });
     });
   }, [navigate]);
-
-  const handleGoogle = async () => {
-    setGoogleLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error(result.error.message ?? "Google sign-in failed");
-      setGoogleLoading(false);
-      return;
-    }
-    if (result.redirected) return;
-    router.invalidate();
-    navigate({ to: "/" });
-  };
 
   const handleEmail = async (mode: "signin" | "signup") => {
     if (!email || !password) {
@@ -82,27 +65,6 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Sign in to launch your AI interview coaching sessions.
           </p>
-        </div>
-
-        <Button
-          onClick={handleGoogle}
-          disabled={googleLoading}
-          variant="outline"
-          className="w-full"
-          size="lg"
-        >
-          {googleLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <GoogleIcon />
-          )}
-          Continue with Google
-        </Button>
-
-        <div className="my-6 flex items-center gap-3">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">or</span>
-          <div className="h-px flex-1 bg-border" />
         </div>
 
         <Tabs defaultValue="signin">
@@ -154,16 +116,5 @@ function AuthPage() {
         </Tabs>
       </div>
     </div>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24">
-      <path
-        fill="#EA4335"
-        d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.4 14.6 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12s4.2 9.5 9.4 9.5c5.4 0 9-3.8 9-9.2 0-.6-.1-1.1-.2-1.6H12z"
-      />
-    </svg>
   );
 }
