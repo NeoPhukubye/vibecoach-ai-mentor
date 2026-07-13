@@ -1,0 +1,1 @@
+- [Lovable vite-tanstack-config IPv6 bind](lovable-vite-tanstack-ipv6.md) — TanStack Start/Lovable imports fail to start (EAFNOSUPPORT ::) on Replit; must override server host/port.

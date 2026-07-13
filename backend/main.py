@@ -1,9 +1,10 @@
 import json
 import os
 
-from anthropic import Anthropic
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from google import genai
+from google.genai import types
 from pydantic import BaseModel
 
 app = FastAPI(title="AI Interview Simulator API")
@@ -18,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 SYSTEM_PROMPT = (
     "You are an elite recruiter. Generate exactly 3 highly targeted interview "
@@ -46,14 +47,16 @@ def generate_questions(job_input: JobInput):
     )
 
     try:
-        response = client.messages.create(
-            model="claude-3-5-sonnet-20241022",
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": user_message}],
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=user_message,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                response_mime_type="application/json",
+            ),
         )
 
-        raw_text = response.content[0].text
+        raw_text = response.text
         questions = json.loads(raw_text)
         return questions
     except Exception as exc:
