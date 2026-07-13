@@ -1,5 +1,8 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Video, BarChart3, Sparkles } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { LayoutDashboard, Video, BarChart3, Sparkles, LogOut, LogIn } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -12,6 +15,7 @@ import {
   SidebarMenuItem,
   SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 const items = [
   { title: "Setup Dashboard", url: "/", icon: LayoutDashboard },
@@ -22,6 +26,29 @@ const items = [
 export function AppSidebar() {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (path: string) => currentPath === path;
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
+
+  const displayName = user?.user_metadata?.full_name ?? user?.email ?? "Guest";
+  const initials = (displayName as string)
+    .split(" ")
+    .map((s) => s[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <Sidebar collapsible="icon">
@@ -58,15 +85,32 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent/20 text-sm font-semibold text-accent">
-            JD
+        {user ? (
+          <div className="space-y-3 group-data-[collapsible=icon]:hidden">
+            <div className="flex items-center gap-3">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent/20 text-sm font-semibold text-accent">
+                {initials || "U"}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{displayName}</p>
+                <p className="truncate text-xs text-muted-foreground">Signed in</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className="w-full" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
           </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">Jordan Doe</p>
-            <p className="truncate text-xs text-muted-foreground">Pro plan</p>
-          </div>
-        </div>
+        ) : (
+          <Button
+            className="w-full gradient-primary group-data-[collapsible=icon]:hidden"
+            size="sm"
+            onClick={() => navigate({ to: "/auth" })}
+          >
+            <LogIn className="h-4 w-4" />
+            Sign in
+          </Button>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
