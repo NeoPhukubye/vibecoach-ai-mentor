@@ -12,6 +12,11 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Build a plain Node server (not the Cloudflare Worker default) so the app
+  // can run as a normal Node process on Replit's autoscale deployments.
+  nitro: {
+    preset: "node-server",
+  },
   vite: {
     server: {
       host: "0.0.0.0",
