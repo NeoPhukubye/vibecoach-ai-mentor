@@ -1,9 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { Mic, Video, ChevronRight, ChevronLeft, BarChart3, Circle } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Mic, Video, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { generateInterviewQuestions } from "@/lib/interview.functions";
 
 export const Route = createFileRoute("/interview")({
   head: () => ({
@@ -15,16 +17,52 @@ export const Route = createFileRoute("/interview")({
   component: InterviewRoom,
 });
 
-const QUESTIONS = [
-  "Tell me about a time you had to make a difficult product decision with limited data. Walk me through your process.",
-  "How do you balance user needs with business goals when they conflict?",
-  "Describe a project where you had to influence stakeholders without direct authority.",
-];
-
 function InterviewRoom() {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [recording, setRecording] = useState(false);
-  const total = QUESTIONS.length;
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [jobTitle, setJobTitle] = useState("");
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("vibecoach:job");
+    if (!raw) {
+      toast.error("Add a job title and description first");
+      navigate({ to: "/" });
+      return;
+    }
+    const { jobTitle: t, jobDescription } = JSON.parse(raw) as {
+      jobTitle: string;
+      jobDescription: string;
+    };
+    setJobTitle(t);
+    generateInterviewQuestions({ data: { jobTitle: t, jobDescription } })
+      .then((res) => setQuestions(res.questions))
+      .catch((e) => {
+        console.error(e);
+        toast.error("Failed to generate questions. Try again.");
+        navigate({ to: "/" });
+      })
+      .finally(() => setLoading(false));
+  }, [navigate]);
+
+  const total = questions.length;
+
+  if (loading || total === 0) {
+    return (
+      <div className="grid min-h-full place-items-center p-8">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="font-display text-lg font-semibold">Crafting your interview…</p>
+          <p className="text-sm text-muted-foreground">
+            Tailoring questions to the role you pasted.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-full p-4 sm:p-6 lg:p-8">
