@@ -70,7 +70,7 @@ function InterviewRoom() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold sm:text-3xl">Live Interview</h1>
-            <p className="text-sm text-muted-foreground">Senior Product Designer · Simulated by VibeCoach AI</p>
+            <p className="text-sm text-muted-foreground">{jobTitle} · Simulated by VibeCoach AI</p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
             <span className="relative flex h-2 w-2">
