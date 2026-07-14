@@ -29,12 +29,12 @@ ${data.jobDescription}
 Return JSON matching {"questions": [q1, q2, q3]}.`;
 
     try {
-      const { experimental_output } = await generateText({
+      const { output } = await generateText({
         model: gateway("google/gemini-3-flash-preview"),
-        experimental_output: Output.object({ schema: QuestionsSchema }),
+        output: Output.object({ schema: QuestionsSchema }),
         prompt,
       });
-      return experimental_output;
+      return output;
     } catch (error) {
       if (NoObjectGeneratedError.isInstance(error)) {
         const text = (error as { text?: string }).text ?? "{}";
