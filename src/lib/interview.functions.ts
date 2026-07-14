@@ -37,8 +37,11 @@ Return JSON matching {"questions": [q1, q2, q3]}.`;
       return experimental_output;
     } catch (error) {
       if (NoObjectGeneratedError.isInstance(error)) {
-        const parsed = QuestionsSchema.safeParse(JSON.parse(error.text ?? "{}"));
-        if (parsed.success) return parsed.data;
+        const text = (error as { text?: string }).text ?? "{}";
+        try {
+          const parsed = QuestionsSchema.safeParse(JSON.parse(text));
+          if (parsed.success) return parsed.data;
+        } catch {}
       }
       throw error;
     }
