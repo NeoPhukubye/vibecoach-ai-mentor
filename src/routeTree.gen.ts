@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InterviewRoute = InterviewRouteImport.update({
   id: '/interview',
   path: '/interview',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/interview': typeof InterviewRoute
+  '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/interview': typeof InterviewRoute
+  '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/interview': typeof InterviewRoute
+  '/reset-password': typeof ResetPasswordRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/analytics' | '/auth' | '/interview'
+  fullPaths: '/' | '/analytics' | '/auth' | '/interview' | '/reset-password'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/analytics' | '/auth' | '/interview'
-  id: '__root__' | '/' | '/analytics' | '/auth' | '/interview'
+  to: '/' | '/analytics' | '/auth' | '/interview' | '/reset-password'
+  id:
+    | '__root__'
+    | '/'
+    | '/analytics'
+    | '/auth'
+    | '/interview'
+    | '/reset-password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +82,18 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   AuthRoute: typeof AuthRoute
   InterviewRoute: typeof InterviewRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/interview': {
       id: '/interview'
       path: '/interview'
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   AuthRoute: AuthRoute,
   InterviewRoute: InterviewRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

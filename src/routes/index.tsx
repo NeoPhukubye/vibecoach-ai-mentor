@@ -94,7 +94,14 @@ function SetupDashboard() {
                 </p>
                 <Button
                   size="lg"
-                  onClick={() => navigate({ to: "/interview" })}
+                  disabled={!jobTitle.trim() || !jobDescription.trim()}
+                  onClick={() => {
+                    sessionStorage.setItem(
+                      "vibecoach:job",
+                      JSON.stringify({ jobTitle, jobDescription })
+                    );
+                    navigate({ to: "/interview" });
+                  }}
                   className="group h-12 gradient-primary px-6 text-base font-semibold text-primary-foreground shadow-glow transition-all hover:scale-[1.02] hover:brightness-110"
                 >
                   <Rocket className="mr-2 h-4 w-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />

@@ -1,11 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { Mic, Video, ChevronRight, ChevronLeft, BarChart3, Circle } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { Mic, Video, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { generateInterviewQuestions } from "@/lib/interview.functions";
+import { saveInterviewSession } from "@/lib/sessions.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/interview")({
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Interview Room — VibeCoach" },
@@ -15,16 +20,118 @@ export const Route = createFileRoute("/interview")({
   component: InterviewRoom,
 });
 
-const QUESTIONS = [
-  "Tell me about a time you had to make a difficult product decision with limited data. Walk me through your process.",
-  "How do you balance user needs with business goals when they conflict?",
-  "Describe a project where you had to influence stakeholders without direct authority.",
-];
+type JobPayload = { jobTitle: string; jobDescription: string };
+
+function synthesizeResults(questions: string[], startedAt: number) {
+  // Lightweight mock scoring so improvement can be tracked over time.
+  // Replace with real speech-analysis output later.
+  const base = 68 + Math.floor(Math.random() * 27); // 68-94
+  const clarity = Math.round((6 + Math.random() * 3.5) * 10) / 10;
+  const um = Math.floor(Math.random() * 8);
+  const like = Math.floor(Math.random() * 7);
+  const youKnow = Math.floor(Math.random() * 5);
+  const filler = um + like + youKnow;
+  const duration = Math.max(60, Math.floor((Date.now() - startedAt) / 1000));
+
+  const feedback = [
+    { type: "good" as const, title: "Strong structural storytelling", detail: "You framed several answers with clear situation, action, and result." },
+    { type: "warn" as const, title: "Watch pacing during detail", detail: "A couple of answers rushed past key metrics — slow down when landing outcomes." },
+    { type: "good" as const, title: "Confident closing statements", detail: "You wrapped answers with decisive summaries, which reads as senior-level clarity." },
+    filler > 10
+      ? { type: "warn" as const, title: "Trim filler words", detail: `We heard ${filler} filler words across ${questions.length} answers. Pause instead of filling.` }
+      : { type: "good" as const, title: "Clean delivery", detail: `Only ${filler} filler words across the session — very tight.` },
+  ];
+
+  return {
+    overallScore: base,
+    clarityRating: clarity,
+    fillerCount: filler,
+    fillerBreakdown: { um, like, "you know": youKnow } as Record<string, number>,
+    feedback,
+    durationSeconds: duration,
+  };
+}
 
 function InterviewRoom() {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [recording, setRecording] = useState(false);
-  const total = QUESTIONS.length;
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [finishing, setFinishing] = useState(false);
+  const [job, setJob] = useState<JobPayload | null>(null);
+  const startedAtRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        toast.error("Sign in to run a practice interview");
+        navigate({ to: "/auth" });
+        return;
+      }
+      const raw = sessionStorage.getItem("vibecoach:job");
+      if (!raw) {
+        toast.error("Add a job title and description first");
+        navigate({ to: "/" });
+        return;
+      }
+      const parsed = JSON.parse(raw) as JobPayload;
+      setJob(parsed);
+      startedAtRef.current = Date.now();
+      try {
+        const res = await generateInterviewQuestions({
+          data: { jobTitle: parsed.jobTitle, jobDescription: parsed.jobDescription },
+        });
+        setQuestions(res.questions);
+      } catch (e) {
+        console.error(e);
+        toast.error("Failed to generate questions. Try again.");
+        navigate({ to: "/" });
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [navigate]);
+
+  const total = questions.length;
+
+  const handleFinish = async () => {
+    if (!job) return;
+    setFinishing(true);
+    try {
+      const results = synthesizeResults(questions, startedAtRef.current);
+      const { id } = await saveInterviewSession({
+        data: {
+          jobTitle: job.jobTitle,
+          jobDescription: job.jobDescription,
+          questions,
+          ...results,
+        },
+      });
+      sessionStorage.removeItem("vibecoach:job");
+      toast.success("Session saved to your history");
+      navigate({ to: "/analytics", search: { session: id } as never });
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Could not save session");
+      setFinishing(false);
+    }
+  };
+
+  if (loading || total === 0) {
+    return (
+      <div className="grid min-h-full place-items-center p-8">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="font-display text-lg font-semibold">Crafting your interview…</p>
+          <p className="text-sm text-muted-foreground">
+            Tailoring questions to the role you pasted.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full p-4 sm:p-6 lg:p-8">
@@ -32,7 +139,7 @@ function InterviewRoom() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold sm:text-3xl">Live Interview</h1>
-            <p className="text-sm text-muted-foreground">Senior Product Designer · Simulated by VibeCoach AI</p>
+            <p className="text-sm text-muted-foreground">{job?.jobTitle} · Simulated by VibeCoach AI</p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
             <span className="relative flex h-2 w-2">
@@ -44,7 +151,6 @@ function InterviewRoom() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
-          {/* Left: video avatar */}
           <div className="space-y-4">
             <Card className="overflow-hidden border-border/60 bg-card/70 p-0 backdrop-blur">
               <div className="relative aspect-video w-full bg-gradient-to-br from-primary/30 via-background to-accent/20">
@@ -68,7 +174,6 @@ function InterviewRoom() {
                 </div>
               </div>
 
-              {/* Audio wave */}
               <div className="border-t border-border/60 bg-card/80 p-6">
                 <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Audio waveform
@@ -89,7 +194,6 @@ function InterviewRoom() {
             </Card>
           </div>
 
-          {/* Right: question panel */}
           <Card className="flex flex-col border-border/60 bg-card/70 p-6 backdrop-blur">
             <div className="mb-6 space-y-2">
               <div className="flex items-center justify-between text-xs font-medium">
@@ -103,10 +207,9 @@ function InterviewRoom() {
 
             <div className="mb-6 flex-1 rounded-xl border border-border/60 bg-background/60 p-6">
               <p className="text-xs font-medium uppercase tracking-wider text-accent">Current question</p>
-              <p className="mt-3 text-lg leading-relaxed sm:text-xl">{QUESTIONS[current]}</p>
+              <p className="mt-3 text-lg leading-relaxed sm:text-xl">{questions[current]}</p>
             </div>
 
-            {/* Record button */}
             <div className="mb-6 flex flex-col items-center gap-3">
               <button
                 onClick={() => setRecording((r) => !r)}
@@ -144,15 +247,27 @@ function InterviewRoom() {
                   Next question <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               ) : (
-                <Button size="sm" asChild className="gradient-accent text-accent-foreground">
-                  <Link to="/analytics">
-                    Finish & see results <BarChart3 className="ml-1 h-4 w-4" />
-                  </Link>
+                <Button
+                  size="sm"
+                  onClick={handleFinish}
+                  disabled={finishing}
+                  className="gradient-accent text-accent-foreground"
+                >
+                  {finishing ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <BarChart3 className="ml-1 h-4 w-4" />
+                  )}
+                  {finishing ? "Saving…" : "Finish & save results"}
                 </Button>
               )}
             </div>
           </Card>
         </div>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Need to quit? <Link to="/" className="underline">Return to setup</Link> — this session won't be saved.
+        </p>
       </div>
     </div>
   );
