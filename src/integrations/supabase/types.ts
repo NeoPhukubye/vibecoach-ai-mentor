@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      interview_sessions: {
+        Row: {
+          clarity_rating: number
+          created_at: string
+          duration_seconds: number
+          feedback: Json
+          filler_breakdown: Json
+          filler_count: number
+          id: string
+          job_description: string
+          job_title: string
+          overall_score: number
+          questions: Json
+          user_id: string
+        }
+        Insert: {
+          clarity_rating: number
+          created_at?: string
+          duration_seconds?: number
+          feedback?: Json
+          filler_breakdown?: Json
+          filler_count?: number
+          id?: string
+          job_description: string
+          job_title: string
+          overall_score: number
+          questions?: Json
+          user_id: string
+        }
+        Update: {
+          clarity_rating?: number
+          created_at?: string
+          duration_seconds?: number
+          feedback?: Json
+          filler_breakdown?: Json
+          filler_count?: number
+          id?: string
+          job_description?: string
+          job_title?: string
+          overall_score?: number
+          questions?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
