@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Rocket, Briefcase, FileText, Sparkles, Target, Timer } from "lucide-react";
+import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +22,20 @@ function SetupDashboard() {
   const navigate = useNavigate();
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  const firstName =
+    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ??
+    user?.email?.split("@")[0] ??
+    "there";
 
   return (
     <div className="relative min-h-full gradient-hero">
@@ -28,7 +44,7 @@ function SetupDashboard() {
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
             <Sparkles className="h-3 w-3 text-accent" />
-            Welcome back, Jordan
+            Welcome back, {firstName}
           </div>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
             Let's ace your next <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">interview</span>.
