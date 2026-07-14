@@ -141,7 +141,7 @@ function InterviewRoom() {
 
             <div className="mb-6 flex-1 rounded-xl border border-border/60 bg-background/60 p-6">
               <p className="text-xs font-medium uppercase tracking-wider text-accent">Current question</p>
-              <p className="mt-3 text-lg leading-relaxed sm:text-xl">{QUESTIONS[current]}</p>
+              <p className="mt-3 text-lg leading-relaxed sm:text-xl">{questions[current]}</p>
             </div>
 
             {/* Record button */}
