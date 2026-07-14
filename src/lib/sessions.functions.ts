@@ -26,25 +26,39 @@ export const saveInterviewSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => SaveSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const baseRow = {
+      user_id: context.userId,
+      job_title: data.jobTitle,
+      job_description: data.jobDescription,
+      questions: data.questions,
+      overall_score: data.overallScore,
+      clarity_rating: data.clarityRating,
+      filler_count: data.fillerCount,
+      filler_breakdown: data.fillerBreakdown,
+      feedback: data.feedback,
+      duration_seconds: data.durationSeconds,
+    };
+
+    let { data: row, error } = await context.supabase
       .from("interview_sessions")
-      .insert({
-        user_id: context.userId,
-        job_title: data.jobTitle,
-        job_description: data.jobDescription,
-        interview_type: data.interviewType,
-        questions: data.questions,
-        overall_score: data.overallScore,
-        clarity_rating: data.clarityRating,
-        filler_count: data.fillerCount,
-        filler_breakdown: data.fillerBreakdown,
-        feedback: data.feedback,
-        duration_seconds: data.durationSeconds,
-      })
+      .insert({ ...baseRow, interview_type: data.interviewType })
       .select("id")
       .single();
+
+    // The `interview_type` column may not exist yet on this database (pending
+    // migration). Fall back to saving without it so sessions keep working.
+    if (error && (error.code === "42703" || error.message.includes("interview_type"))) {
+      const retry = await context.supabase
+        .from("interview_sessions")
+        .insert(baseRow)
+        .select("id")
+        .single();
+      row = retry.data;
+      error = retry.error;
+    }
+
     if (error) throw new Error(error.message);
-    return { id: row.id as string };
+    return { id: row!.id as string };
   });
 
 export const listMyInterviewSessions = createServerFn({ method: "GET" })
