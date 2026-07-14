@@ -70,7 +70,7 @@ function Analytics() {
     }
   }, [authed, navigate]);
 
-  const sessions = (data?.sessions ?? []) as SessionRow[];
+  const sessions = (data?.sessions ?? []) as unknown as SessionRow[];
   const [selectedId, setSelectedId] = useState<string | undefined>(selectedIdFromUrl);
   useEffect(() => {
     if (!selectedId && sessions.length > 0) setSelectedId(sessions[0].id);
