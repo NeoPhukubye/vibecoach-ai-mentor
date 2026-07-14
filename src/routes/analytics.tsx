@@ -18,13 +18,19 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { listMyInterviewSessions } from "@/lib/sessions.functions";
+import { INTERVIEW_TYPES } from "@/lib/interview.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+function interviewTypeLabel(value?: string) {
+  return INTERVIEW_TYPES.find((t) => t.value === value)?.label ?? "Mixed";
+}
 
 type FeedbackItem = { type: "good" | "warn"; title: string; detail: string };
 type SessionRow = {
   id: string;
   job_title: string;
+  interview_type?: string;
   overall_score: number;
   clarity_rating: number;
   filler_count: number;
@@ -143,7 +149,8 @@ function Analytics() {
             </div>
             <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">Performance report</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {selected.job_title} · {new Date(selected.created_at).toLocaleString()} · {Math.round(selected.duration_seconds / 60)}m
+              {selected.job_title} · {interviewTypeLabel(selected.interview_type)} format ·{" "}
+              {new Date(selected.created_at).toLocaleString()} · {Math.round(selected.duration_seconds / 60)}m
             </p>
           </div>
           <Button size="lg" className="gradient-accent text-accent-foreground shadow-accent-glow transition-all hover:scale-[1.02] hover:brightness-110">
@@ -245,6 +252,7 @@ function Analytics() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{s.job_title}</p>
                         <p className="text-xs text-muted-foreground">
+                          {interviewTypeLabel(s.interview_type)} ·{" "}
                           {new Date(s.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                         </p>
                       </div>

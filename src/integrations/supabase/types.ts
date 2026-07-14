@@ -23,6 +23,7 @@ export type Database = {
           filler_breakdown: Json
           filler_count: number
           id: string
+          interview_type: string
           job_description: string
           job_title: string
           overall_score: number
@@ -37,6 +38,7 @@ export type Database = {
           filler_breakdown?: Json
           filler_count?: number
           id?: string
+          interview_type?: string
           job_description: string
           job_title: string
           overall_score: number
@@ -51,6 +53,7 @@ export type Database = {
           filler_breakdown?: Json
           filler_count?: number
           id?: string
+          interview_type?: string
           job_description?: string
           job_title?: string
           overall_score?: number

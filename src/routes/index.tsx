@@ -1,12 +1,20 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Rocket, Briefcase, FileText, Sparkles, Target, Timer } from "lucide-react";
+import { Rocket, Briefcase, FileText, Sparkles, Target, Timer, Layers, Users, Code2, ClipboardCheck } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { INTERVIEW_TYPES, type InterviewType } from "@/lib/interview.functions";
+
+const TYPE_ICONS: Record<InterviewType, typeof Layers> = {
+  mixed: Layers,
+  behavioral: Users,
+  technical: Code2,
+  practical: ClipboardCheck,
+};
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,6 +30,7 @@ function SetupDashboard() {
   const navigate = useNavigate();
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
+  const [interviewType, setInterviewType] = useState<InterviewType>("mixed");
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -88,6 +97,43 @@ function SetupDashboard() {
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Interview format
+                </label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {INTERVIEW_TYPES.map(({ value, label, description }) => {
+                    const Icon = TYPE_ICONS[value];
+                    const active = interviewType === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setInterviewType(value)}
+                        className={`flex items-start gap-3 rounded-xl border p-3 text-left transition ${
+                          active
+                            ? "border-primary/60 bg-primary/10 ring-1 ring-primary/40"
+                            : "border-border/60 bg-background/60 hover:border-border"
+                        }`}
+                      >
+                        <div
+                          className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg ${
+                            active ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold">{label}</p>
+                          <p className="text-xs text-muted-foreground">{description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground">
                   Your data stays private and isn't stored between sessions.
@@ -98,7 +144,7 @@ function SetupDashboard() {
                   onClick={() => {
                     sessionStorage.setItem(
                       "vibecoach:job",
-                      JSON.stringify({ jobTitle, jobDescription })
+                      JSON.stringify({ jobTitle, jobDescription, interviewType })
                     );
                     navigate({ to: "/interview" });
                   }}

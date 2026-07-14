@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { InterviewTypeSchema } from "@/lib/interview.functions";
 
 const FeedbackItemSchema = z.object({
   type: z.enum(["good", "warn"]),
@@ -11,6 +12,7 @@ const FeedbackItemSchema = z.object({
 const SaveSchema = z.object({
   jobTitle: z.string().min(1),
   jobDescription: z.string().min(1),
+  interviewType: InterviewTypeSchema.default("mixed"),
   questions: z.array(z.string()),
   overallScore: z.number().int().min(0).max(100),
   clarityRating: z.number().min(0).max(10),
@@ -30,6 +32,7 @@ export const saveInterviewSession = createServerFn({ method: "POST" })
         user_id: context.userId,
         job_title: data.jobTitle,
         job_description: data.jobDescription,
+        interview_type: data.interviewType,
         questions: data.questions,
         overall_score: data.overallScore,
         clarity_rating: data.clarityRating,

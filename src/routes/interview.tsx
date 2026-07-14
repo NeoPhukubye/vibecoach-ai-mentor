@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { generateInterviewQuestions } from "@/lib/interview.functions";
+import { generateInterviewQuestions, INTERVIEW_TYPES, type InterviewType } from "@/lib/interview.functions";
 import { saveInterviewSession } from "@/lib/sessions.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/interview")({
   component: InterviewRoom,
 });
 
-type JobPayload = { jobTitle: string; jobDescription: string };
+type JobPayload = { jobTitle: string; jobDescription: string; interviewType?: InterviewType };
 
 function synthesizeResults(questions: string[], startedAt: number) {
   // Lightweight mock scoring so improvement can be tracked over time.
@@ -81,7 +81,11 @@ function InterviewRoom() {
       startedAtRef.current = Date.now();
       try {
         const res = await generateInterviewQuestions({
-          data: { jobTitle: parsed.jobTitle, jobDescription: parsed.jobDescription },
+          data: {
+            jobTitle: parsed.jobTitle,
+            jobDescription: parsed.jobDescription,
+            interviewType: parsed.interviewType ?? "mixed",
+          },
         });
         setQuestions(res.questions);
       } catch (e) {
@@ -105,6 +109,7 @@ function InterviewRoom() {
         data: {
           jobTitle: job.jobTitle,
           jobDescription: job.jobDescription,
+          interviewType: job.interviewType ?? "mixed",
           questions,
           ...results,
         },
@@ -139,7 +144,10 @@ function InterviewRoom() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold sm:text-3xl">Live Interview</h1>
-            <p className="text-sm text-muted-foreground">{job?.jobTitle} · Simulated by VibeCoach AI</p>
+            <p className="text-sm text-muted-foreground">
+              {job?.jobTitle} · {INTERVIEW_TYPES.find((t) => t.value === (job?.interviewType ?? "mixed"))?.label}{" "}
+              format · Simulated by VibeCoach AI
+            </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
             <span className="relative flex h-2 w-2">
