@@ -176,6 +176,29 @@ function AuthPage() {
             </p>
           </div>
 
+          {verifyEmailSent ? (
+            <div className="rounded-2xl border border-border/60 bg-card/70 p-6 text-center">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-accent/20 text-accent">
+                <MailCheck className="h-6 w-6" />
+              </div>
+              <h2 className="mt-4 font-display text-xl font-bold">Verify your email</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                We sent a confirmation link to <span className="font-medium text-foreground">{verifyEmailSent}</span>. Click it to activate your account, then sign in.
+              </p>
+              <div className="mt-5 flex flex-col gap-2">
+                <Button onClick={resendVerification} disabled={loading} variant="outline">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Resend verification email"}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setVerifyEmailSent(null)}
+                  className="text-xs text-muted-foreground hover:underline"
+                >
+                  Use a different email
+                </button>
+              </div>
+            </div>
+          ) : (
           <Tabs defaultValue="signin">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
@@ -184,6 +207,22 @@ function AuthPage() {
 
             {(["signin", "signup"] as const).map((mode) => (
               <TabsContent key={mode} value={mode} className="mt-5 space-y-4">
+                {mode === "signup" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full name</Label>
+                    <div className="relative">
+                      <UserIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        id="signup-name"
+                        autoComplete="name"
+                        className="pl-9"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Alex Rivera"
+                      />
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor={`${mode}-email`}>Email</Label>
                   <div className="relative">
