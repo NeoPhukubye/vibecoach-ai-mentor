@@ -41,10 +41,10 @@ function SetupDashboard() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const firstName =
-    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ??
-    user?.email?.split("@")[0] ??
-    "there";
+  const metaName =
+    (user?.user_metadata?.full_name as string | undefined) ??
+    (user?.user_metadata?.name as string | undefined);
+  const firstName = metaName?.trim().split(/\s+/)[0] ?? user?.email?.split("@")[0];
 
   return (
     <div className="relative min-h-full gradient-hero">
