@@ -29,7 +29,7 @@ const PROMPT_BY_TYPE: Record<InterviewType, string> = {
   behavioral:
     "Generate EXACTLY 3 behavioral interview questions tailored to this specific job. Each should ask the candidate to describe a real past situation (use a STAR-style prompt: situation, task, action, result) that reveals how they'd handle the core responsibilities of this role.",
   technical:
-    "Generate EXACTLY 3 technical interview questions tailored to this specific job. Focus on the concrete tools, languages, systems, or domain knowledge listed in the description — include at least one problem-solving or debugging scenario and, if relevant to the role, a coding or system-design question. Be specific enough that a candidate could answer out loud or on a whiteboard.",
+    "Generate EXACTLY 3 items tailored to this specific job so the candidate is ready for BOTH question-based and hands-on rounds: (1) a concrete technical Q&A on the core tools/languages/systems in the description, (2) a problem-solving or debugging scenario they can walk through verbally, and (3) a hands-on PRACTICAL ASSESSMENT — a short, self-contained coding or design task brief the candidate could attempt out loud or on a whiteboard. Clearly prefix the third item with 'Practical assessment: '.",
   practical:
     "Generate EXACTLY 3 practical, hands-on assessment tasks tailored to this specific job — the kind of live exercise or take-home assignment a candidate for this role would actually be asked to complete (e.g. 'build a small feature that...', 'given this dataset/scenario, walk through how you would...', 'debug this described issue step by step'). Each item should read as a short, self-contained task brief with enough context to attempt it, not just a question.",
 };
