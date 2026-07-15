@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Sparkles, Mail, Lock, Loader2, Eye, EyeOff, ArrowRight, TrendingUp, ShieldCheck } from "lucide-react";
+import { Sparkles, Mail, Lock, Loader2, Eye, EyeOff, ArrowRight, TrendingUp, ShieldCheck, User as UserIcon, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
