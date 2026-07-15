@@ -106,6 +106,8 @@ function InterviewRoom() {
     };
   }, []);
 
+  useEffect(() => {
+    (async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast.error("Sign in to run a practice interview");
