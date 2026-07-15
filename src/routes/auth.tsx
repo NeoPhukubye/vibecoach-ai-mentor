@@ -18,9 +18,11 @@ function AuthPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [verifyEmailSent, setVerifyEmailSent] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -37,25 +39,64 @@ function AuthPage() {
       toast.error("Password must be at least 6 characters");
       return;
     }
+    if (mode === "signup" && !fullName.trim()) {
+      toast.error("Enter your full name so we can personalize your coach");
+      return;
+    }
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { full_name: fullName.trim() },
+          },
         });
         if (error) throw error;
-        toast.success("Check your email to confirm your account");
+        if (!data.session) {
+          setVerifyEmailSent(email);
+          toast.success("Verification email sent — confirm to activate your account");
+        } else {
+          toast.success(`Welcome, ${fullName.trim().split(" ")[0]}!`);
+          router.invalidate();
+          navigate({ to: "/" });
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Welcome back!");
+        if (error) {
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            setVerifyEmailSent(email);
+            toast.error("Please verify your email first — check your inbox");
+            return;
+          }
+          throw error;
+        }
+        toast.success("Signed in");
         router.invalidate();
         navigate({ to: "/" });
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Auth failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendVerification = async () => {
+    if (!verifyEmailSent) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: verifyEmailSent,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) throw error;
+      toast.success("Verification email resent");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not resend");
     } finally {
       setLoading(false);
     }
