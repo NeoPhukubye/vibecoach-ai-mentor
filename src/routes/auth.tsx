@@ -297,6 +297,7 @@ function AuthPage() {
               </TabsContent>
             ))}
           </Tabs>
+          )}
         </div>
       </div>
     </div>
