@@ -61,9 +61,51 @@ function InterviewRoom() {
   const [finishing, setFinishing] = useState(false);
   const [job, setJob] = useState<JobPayload | null>(null);
   const startedAtRef = useRef<number>(Date.now());
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraOn, setCameraOn] = useState(true);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    if (!cameraOn) {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      if (videoRef.current) videoRef.current.srcObject = null;
+      return;
+    }
     (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: "user" },
+          audio: false,
+        });
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play().catch(() => {});
+        }
+        setCameraError(null);
+      } catch (e) {
+        setCameraError(e instanceof Error ? e.message : "Camera unavailable");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [cameraOn]);
+
+  useEffect(() => {
+    return () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
+  }, []);
+
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) {
         toast.error("Sign in to run a practice interview");
