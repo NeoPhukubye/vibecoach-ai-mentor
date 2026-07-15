@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Mic, Video, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2 } from "lucide-react";
+import { Mic, Video, VideoOff, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2, CameraOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
