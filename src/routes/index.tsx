@@ -53,7 +53,7 @@ function SetupDashboard() {
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
             <Sparkles className="h-3 w-3 text-accent" />
-            Welcome back, {firstName}
+            {firstName ? <>Welcome back, {firstName}</> : <>Welcome to VibeCoach</>}
           </div>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
             Let's ace your next <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">interview</span>.
