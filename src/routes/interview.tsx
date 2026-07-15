@@ -224,9 +224,41 @@ function InterviewRoom() {
                   <Circle className="h-2 w-2 fill-accent text-accent" />
                   Connected
                 </div>
+
+                {/* Self-view PIP */}
+                <div className="absolute bottom-4 right-4 w-40 sm:w-52 aspect-video overflow-hidden rounded-lg border border-border/70 bg-black shadow-xl">
+                  {cameraOn && !cameraError ? (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="h-full w-full -scale-x-100 object-cover"
+                    />
+                  ) : (
+                    <div className="grid h-full w-full place-items-center bg-muted/40 text-center text-[10px] text-muted-foreground p-2">
+                      <div className="flex flex-col items-center gap-1">
+                        <CameraOff className="h-5 w-5" />
+                        {cameraError ? "Camera blocked" : "Camera off"}
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute left-1.5 top-1.5 rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-medium backdrop-blur">
+                    You
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCameraOn((v) => !v)}
+                    className="absolute bottom-1.5 right-1.5 grid h-7 w-7 place-items-center rounded-full bg-background/80 text-foreground backdrop-blur hover:bg-background"
+                    aria-label={cameraOn ? "Turn camera off" : "Turn camera on"}
+                  >
+                    {cameraOn ? <VideoOff className="h-3.5 w-3.5" /> : <Video className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="border-t border-border/60 bg-card/80 p-6">
+
                 <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Audio waveform
                 </p>
