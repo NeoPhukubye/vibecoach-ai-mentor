@@ -178,6 +178,19 @@ function Analytics() {
           <TrendChart sessions={sessions} selectedId={selected.id} onSelect={setSelectedId} />
         </Card>
 
+        {/* Improvement summary */}
+        <Card className="mb-8 border-border/60 bg-card/70 p-6 backdrop-blur">
+          <div className="flex items-start gap-4">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/20 text-accent">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-bold">Session summary</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{buildSummary(selected, previous, sessions)}</p>
+            </div>
+          </div>
+        </Card>
+
         {/* Metric cards */}
         <div className="mb-8 grid gap-5 md:grid-cols-3">
           <MetricCard
@@ -267,6 +280,28 @@ function Analytics() {
       </div>
     </div>
   );
+}
+
+function buildSummary(current: SessionRow, previous: SessionRow | undefined, all: SessionRow[]): string {
+  const idx = all.findIndex((s) => s.id === current.id);
+  const seq = all.length - idx; // 1-based, oldest = 1
+  const parts: string[] = [`Session #${seq} of ${all.length} · ${interviewTypeLabel(current.interview_type)} format.`];
+  if (!previous) {
+    parts.push(`Baseline set at ${current.overall_score}/100 with ${current.filler_count} filler words. Finish another session to see your improvement.`);
+    return parts.join(" ");
+  }
+  const scoreD = current.overall_score - previous.overall_score;
+  const clarityD = +(current.clarity_rating - previous.clarity_rating).toFixed(1);
+  const fillerD = current.filler_count - previous.filler_count;
+  const bits: string[] = [];
+  bits.push(scoreD === 0 ? "score held steady" : `score ${scoreD > 0 ? "climbed" : "dipped"} ${Math.abs(scoreD)} pts`);
+  if (clarityD !== 0) bits.push(`clarity ${clarityD > 0 ? "up" : "down"} ${Math.abs(clarityD)}`);
+  if (fillerD !== 0) bits.push(`filler words ${fillerD < 0 ? "dropped" : "rose"} by ${Math.abs(fillerD)}`);
+  const avg = Math.round(all.reduce((a, s) => a + s.overall_score, 0) / all.length);
+  const vsAvg = current.overall_score - avg;
+  const trend = vsAvg >= 0 ? `${vsAvg} above your ${avg}/100 average` : `${Math.abs(vsAvg)} below your ${avg}/100 average`;
+  parts.push(`Vs last session: ${bits.join(", ")}. You're ${trend}.`);
+  return parts.join(" ");
 }
 
 function DeltaBadge({ value, label }: { value: number; label: string }) {

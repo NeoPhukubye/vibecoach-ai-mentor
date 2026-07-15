@@ -41,10 +41,10 @@ function SetupDashboard() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  const firstName =
-    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ??
-    user?.email?.split("@")[0] ??
-    "there";
+  const metaName =
+    (user?.user_metadata?.full_name as string | undefined) ??
+    (user?.user_metadata?.name as string | undefined);
+  const firstName = metaName?.trim().split(/\s+/)[0] ?? user?.email?.split("@")[0];
 
   return (
     <div className="relative min-h-full gradient-hero">
@@ -53,7 +53,7 @@ function SetupDashboard() {
         <div className="mb-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
             <Sparkles className="h-3 w-3 text-accent" />
-            Welcome back, {firstName}
+            {firstName ? <>Welcome back, {firstName}</> : <>Welcome to VibeCoach</>}
           </div>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">
             Let's ace your next <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">interview</span>.

@@ -41,7 +41,7 @@ export const saveInterviewSession = createServerFn({ method: "POST" })
 
     let { data: row, error } = await context.supabase
       .from("interview_sessions")
-      .insert({ ...baseRow, interview_type: data.interviewType })
+      .insert({ ...baseRow, interview_type: data.interviewType } as never)
       .select("id")
       .single();
 
