@@ -178,6 +178,19 @@ function Analytics() {
           <TrendChart sessions={sessions} selectedId={selected.id} onSelect={setSelectedId} />
         </Card>
 
+        {/* Improvement summary */}
+        <Card className="mb-8 border-border/60 bg-card/70 p-6 backdrop-blur">
+          <div className="flex items-start gap-4">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/20 text-accent">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-bold">Session summary</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{buildSummary(selected, previous, sessions)}</p>
+            </div>
+          </div>
+        </Card>
+
         {/* Metric cards */}
         <div className="mb-8 grid gap-5 md:grid-cols-3">
           <MetricCard
