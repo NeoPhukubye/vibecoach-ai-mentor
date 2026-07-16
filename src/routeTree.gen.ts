@@ -69,12 +69,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/analytics' | '/auth' | '/interview' | '/reset-password'
   id:
-    | '__root__'
-    | '/'
-    | '/analytics'
-    | '/auth'
-    | '/interview'
-    | '/reset-password'
+    '__root__' | '/' | '/analytics' | '/auth' | '/interview' | '/reset-password'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
