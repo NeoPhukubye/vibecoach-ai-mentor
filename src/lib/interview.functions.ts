@@ -1,70 +1,38 @@
-import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output, NoObjectGeneratedError } from "ai";
-import { z } from "zod";
-import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+export { InterviewTypeSchema, INTERVIEW_TYPES } from "./interview-types";
+export type { InterviewType } from "./interview-types";
 
-export const InterviewTypeSchema = z.enum(["mixed", "behavioral", "technical", "practical"]);
-export type InterviewType = z.infer<typeof InterviewTypeSchema>;
+export async function generateInterviewQuestions(data: {
+  jobTitle: string;
+  jobDescription: string;
+  interviewType?: string;
+}): Promise<{ questions: string[] } | null> {
+  // Server function not available in static SPA mode.
+  // Return mock questions based on job title for demo purposes.
+  const type = data.interviewType || "mixed";
+  const title = data.jobTitle;
 
-export const INTERVIEW_TYPES: { value: InterviewType; label: string; description: string }[] = [
-  { value: "mixed", label: "Mixed", description: "One technical, one behavioral, one culture-fit question." },
-  { value: "behavioral", label: "Behavioral", description: "Situational and past-experience questions only." },
-  { value: "technical", label: "Technical + Assessment", description: "Two role-specific technical questions plus one hands-on practical assessment — ready for Q&A and live tasks." },
-  { value: "practical", label: "Practical only", description: "Hands-on, task-based exercises like a live coding round or take-home challenge." },
-];
+  const questionSets: Record<string, string[]> = {
+    mixed: [
+      `Describe a technical challenge you faced in a previous ${title} role and how you solved it.`,
+      `Tell me about a time you had to collaborate with a difficult team member. How did you handle it?`,
+      `What motivates you about this ${title} position and how does it align with your career goals?`,
+    ],
+    behavioral: [
+      `Describe a situation where you had to meet a tight deadline as a ${title}. What was the outcome?`,
+      `Tell me about a time you received critical feedback. How did you respond?`,
+      `Give an example of when you had to make a difficult decision with incomplete information.`,
+    ],
+    technical: [
+      `Walk me through your approach to solving a complex problem relevant to the ${title} role.`,
+      `How would you debug a production issue in a system you're unfamiliar with?`,
+      `Practical assessment: Given the job description, design a small solution that addresses the core technical requirements.`,
+    ],
+    practical: [
+      `Build a small feature that demonstrates your core skills for the ${title} role.`,
+      `Given a typical scenario for this position, walk through your step-by-step approach.`,
+      `Debug this described issue: A key system component is returning incorrect results intermittently.`,
+    ],
+  };
 
-const InputSchema = z.object({
-  jobTitle: z.string().min(1),
-  jobDescription: z.string().min(1),
-  interviewType: InterviewTypeSchema.default("mixed"),
-});
-
-const QuestionsSchema = z.object({
-  questions: z.array(z.string()).length(3),
-});
-
-const PROMPT_BY_TYPE: Record<InterviewType, string> = {
-  mixed:
-    "Generate EXACTLY 3 highly targeted interview questions tailored to this specific job — one technical/role-specific, one situational/behavioral, one cultural-fit/motivation.",
-  behavioral:
-    "Generate EXACTLY 3 behavioral interview questions tailored to this specific job. Each should ask the candidate to describe a real past situation (use a STAR-style prompt: situation, task, action, result) that reveals how they'd handle the core responsibilities of this role.",
-  technical:
-    "Generate EXACTLY 3 items tailored to this specific job so the candidate is ready for BOTH question-based and hands-on rounds: (1) a concrete technical Q&A on the core tools/languages/systems in the description, (2) a problem-solving or debugging scenario they can walk through verbally, and (3) a hands-on PRACTICAL ASSESSMENT — a short, self-contained coding or design task brief the candidate could attempt out loud or on a whiteboard. Clearly prefix the third item with 'Practical assessment: '.",
-  practical:
-    "Generate EXACTLY 3 practical, hands-on assessment tasks tailored to this specific job — the kind of live exercise or take-home assignment a candidate for this role would actually be asked to complete (e.g. 'build a small feature that...', 'given this dataset/scenario, walk through how you would...', 'debug this described issue step by step'). Each item should read as a short, self-contained task brief with enough context to attempt it, not just a question.",
-};
-
-export const generateInterviewQuestions = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => InputSchema.parse(data))
-  .handler(async ({ data }) => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
-    const gateway = createLovableAiGatewayProvider(key);
-
-    const prompt = `You are an elite recruiter interviewing a candidate for the role below. ${PROMPT_BY_TYPE[data.interviewType]} Reference concrete responsibilities or requirements from the description so the questions clearly could not be reused for a different role.
-
-Job Title: ${data.jobTitle}
-
-Job Description:
-${data.jobDescription}
-
-Return JSON matching {"questions": [q1, q2, q3]}.`;
-
-    try {
-      const { output } = await generateText({
-        model: gateway("google/gemini-3-flash-preview"),
-        output: Output.object({ schema: QuestionsSchema }),
-        prompt,
-      });
-      return output;
-    } catch (error) {
-      if (NoObjectGeneratedError.isInstance(error)) {
-        const text = (error as { text?: string }).text ?? "{}";
-        try {
-          const parsed = QuestionsSchema.safeParse(JSON.parse(text));
-          if (parsed.success) return parsed.data;
-        } catch {}
-      }
-      throw error;
-    }
-  });
+  return { questions: questionSets[type] || questionSets.mixed };
+}
