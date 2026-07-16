@@ -148,13 +148,11 @@ function InterviewRoom() {
     try {
       const results = synthesizeResults(questions, startedAtRef.current);
       const { id } = await saveInterviewSession({
-        data: {
-          jobTitle: job.jobTitle,
-          jobDescription: job.jobDescription,
-          interviewType: job.interviewType ?? "mixed",
-          questions,
-          ...results,
-        },
+        jobTitle: job.jobTitle,
+        jobDescription: job.jobDescription,
+        interviewType: job.interviewType ?? "mixed",
+        questions,
+        ...results,
       });
       sessionStorage.removeItem("vibecoach:job");
       toast.success("Session saved to your history");
