@@ -125,13 +125,11 @@ function InterviewRoom() {
       startedAtRef.current = Date.now();
       try {
         const res = await generateInterviewQuestions({
-          data: {
-            jobTitle: parsed.jobTitle,
-            jobDescription: parsed.jobDescription,
-            interviewType: parsed.interviewType ?? "mixed",
-          },
+          jobTitle: parsed.jobTitle,
+          jobDescription: parsed.jobDescription,
+          interviewType: parsed.interviewType ?? "mixed",
         });
-        setQuestions(res.questions);
+        setQuestions(res?.questions ?? []);
       } catch (e) {
         console.error(e);
         toast.error("Failed to generate questions. Try again.");
