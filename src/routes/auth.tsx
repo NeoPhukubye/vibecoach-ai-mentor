@@ -13,6 +13,9 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+const appUrl = () => new URL(import.meta.env.BASE_URL, window.location.origin).toString();
+const appRouteUrl = (path: string) => new URL(path.replace(/^\//, ""), appUrl()).toString();
+
 function AuthPage() {
   const navigate = useNavigate();
   const router = useRouter();
@@ -50,7 +53,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: appUrl(),
             data: { full_name: fullName.trim() },
           },
         });
@@ -91,7 +94,7 @@ function AuthPage() {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email: verifyEmailSent,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: appUrl() },
       });
       if (error) throw error;
       toast.success("Verification email resent");
@@ -110,7 +113,7 @@ function AuthPage() {
     setResetLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: appRouteUrl("/reset-password"),
       });
       if (error) throw error;
       toast.success("Password reset link sent — check your inbox");
