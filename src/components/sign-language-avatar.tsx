@@ -27,10 +27,8 @@ export function SignLanguageAvatar({ text, isInterpreting }: SignLanguageAvatarP
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const charIndexRef = useRef(0);
 
-  if (!settings.enabled || !settings.showAvatar) return null;
-
   useEffect(() => {
-    if (!text || !isInterpreting) {
+    if (!displayText || !shouldInterpret) {
       setAnimationState("idle");
       setCurrentGesture("");
       setCurrentWord("");
@@ -39,7 +37,7 @@ export function SignLanguageAvatar({ text, isInterpreting }: SignLanguageAvatarP
 
     setAnimationState("signing");
     charIndexRef.current = 0;
-    const chars = text.toUpperCase().split("");
+    const chars = displayText.toUpperCase().split("");
 
     intervalRef.current = setInterval(() => {
       if (charIndexRef.current >= chars.length) {
@@ -50,17 +48,18 @@ export function SignLanguageAvatar({ text, isInterpreting }: SignLanguageAvatarP
       }
       const char = chars[charIndexRef.current];
       setCurrentGesture(SIGN_GESTURES[char] || "🤚");
-      // Show current word context
-      const wordStart = text.lastIndexOf(" ", charIndexRef.current - 1) + 1;
-      const wordEnd = text.indexOf(" ", charIndexRef.current);
-      setCurrentWord(text.slice(wordStart, wordEnd === -1 ? undefined : wordEnd));
+      const wordStart = displayText.lastIndexOf(" ", charIndexRef.current - 1) + 1;
+      const wordEnd = displayText.indexOf(" ", charIndexRef.current);
+      setCurrentWord(displayText.slice(wordStart, wordEnd === -1 ? undefined : wordEnd));
       charIndexRef.current++;
     }, 400);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [text, isInterpreting]);
+  }, [displayText, shouldInterpret]);
+
+  if (!settings.enabled || !settings.showAvatar) return null;
 
   const positionClasses: Record<string, string> = {
     "bottom-right": "bottom-4 right-4",
