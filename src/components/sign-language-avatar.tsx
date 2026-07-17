@@ -16,8 +16,10 @@ interface SignLanguageAvatarProps {
   isInterpreting?: boolean;
 }
 
-export function SignLanguageAvatar({ text = "", isInterpreting = false }: SignLanguageAvatarProps) {
-  const { settings, updateSettings } = useSignLanguage();
+export function SignLanguageAvatar({ text, isInterpreting }: SignLanguageAvatarProps) {
+  const { settings, updateSettings, activeText } = useSignLanguage();
+  const displayText = text ?? activeText;
+  const shouldInterpret = isInterpreting ?? !!activeText;
   const [currentGesture, setCurrentGesture] = useState("");
   const [currentWord, setCurrentWord] = useState("");
   const [minimized, setMinimized] = useState(false);

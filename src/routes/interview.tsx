@@ -68,7 +68,15 @@ function InterviewRoom() {
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const { settings: signSettings } = useSignLanguage();
+  const { settings: signSettings, setActiveText } = useSignLanguage();
+
+  // Feed current question to the sign language avatar
+  useEffect(() => {
+    if (questions[current]) {
+      setActiveText(questions[current]);
+    }
+    return () => setActiveText("");
+  }, [current, questions, setActiveText]);
 
   useEffect(() => {
     let cancelled = false;

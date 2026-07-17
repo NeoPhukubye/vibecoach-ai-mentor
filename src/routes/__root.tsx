@@ -64,7 +64,7 @@ function RootComponent() {
               </main>
             </div>
           </div>
-          <SignLanguageAvatar />
+          <SignLanguageAvatar text="" isInterpreting={false} />
           <AccessibilitySettings open={accessibilityOpen} onClose={() => setAccessibilityOpen(false)} />
           <Toaster />
         </SidebarProvider>
