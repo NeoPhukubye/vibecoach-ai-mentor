@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { generateInterviewQuestions, INTERVIEW_TYPES, type InterviewType } from "@/lib/interview.functions";
+import { generateInterviewQuestions, INTERVIEW_TYPES, INTERVIEW_LANGUAGES, type InterviewType } from "@/lib/interview.functions";
 import { saveInterviewSession } from "@/lib/sessions.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { SignLanguageAvatar } from "@/components/sign-language-avatar";
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/interview")({
   component: InterviewRoom,
 });
 
-type JobPayload = { jobTitle: string; jobDescription: string; interviewType?: InterviewType };
+type JobPayload = { jobTitle: string; jobDescription: string; interviewType?: InterviewType; language?: string };
 
 function synthesizeResults(questions: string[], startedAt: number) {
   // Lightweight mock scoring so improvement can be tracked over time.
@@ -140,6 +140,7 @@ function InterviewRoom() {
           jobTitle: parsed.jobTitle,
           jobDescription: parsed.jobDescription,
           interviewType: parsed.interviewType ?? "mixed",
+          language: parsed.language ?? "en",
         });
         setQuestions(res?.questions ?? []);
       } catch (e) {
@@ -198,7 +199,7 @@ function InterviewRoom() {
             <h1 className="text-2xl font-bold sm:text-3xl">Live Interview</h1>
             <p className="text-sm text-muted-foreground">
               {job?.jobTitle} · {INTERVIEW_TYPES.find((t) => t.value === (job?.interviewType ?? "mixed"))?.label}{" "}
-              format · Simulated by VibeCoach AI
+              format · {INTERVIEW_LANGUAGES.find((l) => l.value === (job?.language ?? "en"))?.label ?? "English"} · Simulated by VibeCoach AI
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">

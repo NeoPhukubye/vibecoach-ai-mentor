@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Rocket, Briefcase, FileText, Sparkles, Target, Timer, Layers, Users, Code2, ClipboardCheck } from "lucide-react";
+import { Rocket, Briefcase, FileText, Sparkles, Target, Timer, Layers, Users, Code2, ClipboardCheck, Globe, Hand } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { INTERVIEW_TYPES, type InterviewType } from "@/lib/interview.functions";
+import { INTERVIEW_TYPES, INTERVIEW_LANGUAGES, type InterviewType, type InterviewLanguage } from "@/lib/interview.functions";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSignLanguage, SIGN_LANGUAGES } from "@/lib/sign-language-context";
 
 const TYPE_ICONS: Record<InterviewType, typeof Layers> = {
   mixed: Layers,
@@ -31,7 +33,9 @@ function SetupDashboard() {
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [interviewType, setInterviewType] = useState<InterviewType>("mixed");
+  const [language, setLanguage] = useState<InterviewLanguage>("en");
   const [user, setUser] = useState<User | null>(null);
+  const { settings, updateSettings } = useSignLanguage();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
@@ -134,6 +138,72 @@ function SetupDashboard() {
                 </div>
               </div>
 
+              {/* Language selection */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Globe className="h-4 w-4 text-primary" />
+                  Interview Language
+                </label>
+                <Select value={language} onValueChange={(val) => setLanguage(val as InterviewLanguage)}>
+                  <SelectTrigger className="h-12 border-border/60 bg-background/60">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INTERVIEW_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        <span className="flex items-center gap-2">
+                          <span>{lang.label}</span>
+                          <span className="text-xs text-muted-foreground">({lang.nativeLabel})</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Questions and feedback will be in this language.
+                </p>
+              </div>
+
+              {/* Sign language selection */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <Hand className="h-4 w-4 text-primary" />
+                  Sign Language (optional)
+                </label>
+                <div className="flex items-center gap-3">
+                  <Select
+                    value={settings.enabled ? settings.signLanguage : "none"}
+                    onValueChange={(val) => {
+                      if (val === "none") {
+                        updateSettings({ enabled: false });
+                      } else {
+                        updateSettings({ enabled: true, signLanguage: val as any, showAvatar: true });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12 border-border/60 bg-background/60">
+                      <SelectValue placeholder="Not using sign language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">Not using sign language</span>
+                      </SelectItem>
+                      {SIGN_LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          <span className="flex items-center gap-2">
+                            <span>{lang.label}</span>
+                            <span className="text-xs text-muted-foreground">({lang.region})</span>
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enables the signing avatar interpreter and sign language camera input during your interview.
+                </p>
+              </div>
+
               <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-xs text-muted-foreground">
                   Your data stays private and isn't stored between sessions.
@@ -144,7 +214,7 @@ function SetupDashboard() {
                   onClick={() => {
                     sessionStorage.setItem(
                       "vibecoach:job",
-                      JSON.stringify({ jobTitle, jobDescription, interviewType })
+                      JSON.stringify({ jobTitle, jobDescription, interviewType, language })
                     );
                     navigate({ to: "/interview" });
                   }}
