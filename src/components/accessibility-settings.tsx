@@ -72,7 +72,7 @@ export function AccessibilitySettings({ open, onClose }: AccessibilitySettingsPr
             <Select
               value={settings.signLanguage}
               onValueChange={(val) => updateSettings({ signLanguage: val as any })}
-              disabled={!settings.enabled}
+
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select sign language" />
@@ -103,7 +103,7 @@ export function AccessibilitySettings({ open, onClose }: AccessibilitySettingsPr
               id="sl-avatar"
               checked={settings.showAvatar}
               onCheckedChange={(val) => updateSettings({ showAvatar: val })}
-              disabled={!settings.enabled}
+
             />
           </div>
 
@@ -120,7 +120,7 @@ export function AccessibilitySettings({ open, onClose }: AccessibilitySettingsPr
               id="sl-recognition"
               checked={settings.signRecognitionEnabled}
               onCheckedChange={(val) => updateSettings({ signRecognitionEnabled: val })}
-              disabled={!settings.enabled}
+
             />
           </div>
 
@@ -132,7 +132,7 @@ export function AccessibilitySettings({ open, onClose }: AccessibilitySettingsPr
                 <button
                   key={pos}
                   onClick={() => updateSettings({ avatarPosition: pos })}
-                  disabled={!settings.enabled}
+
                   className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                     settings.avatarPosition === pos
                       ? "border-primary bg-primary/10 text-primary"
@@ -153,7 +153,7 @@ export function AccessibilitySettings({ open, onClose }: AccessibilitySettingsPr
                 <button
                   key={s}
                   onClick={() => updateSettings({ avatarSize: s })}
-                  disabled={!settings.enabled}
+
                   className={`rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
                     settings.avatarSize === s
                       ? "border-primary bg-primary/10 text-primary"
