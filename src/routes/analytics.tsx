@@ -21,6 +21,7 @@ import { listMyInterviewSessions } from "@/lib/sessions.functions";
 import { INTERVIEW_TYPES } from "@/lib/interview.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { downloadSessionPDF } from "@/lib/pdf-export";
 
 function interviewTypeLabel(value?: string) {
   return INTERVIEW_TYPES.find((t) => t.value === value)?.label ?? "Mixed";
@@ -153,9 +154,25 @@ function Analytics() {
               {new Date(selected.created_at).toLocaleString()} · {Math.round(selected.duration_seconds / 60)}m
             </p>
           </div>
-          <Button size="lg" className="gradient-accent text-accent-foreground shadow-accent-glow transition-all hover:scale-[1.02] hover:brightness-110">
+          <Button
+            size="lg"
+            className="gradient-accent text-accent-foreground shadow-accent-glow transition-all hover:scale-[1.02] hover:brightness-110"
+            onClick={() => {
+              try {
+                downloadSessionPDF({
+                  session: selected,
+                  allSessions: sessions,
+                  interviewTypeLabel: interviewTypeLabel(selected.interview_type),
+                });
+                toast.success("PDF downloaded successfully");
+              } catch (e) {
+                console.error(e);
+                toast.error("Failed to generate PDF");
+              }
+            }}
+          >
             <Mail className="mr-2 h-4 w-4" />
-            Export Detailed PDF via Email
+            Export Detailed PDF
           </Button>
         </div>
 
