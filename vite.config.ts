@@ -5,7 +5,8 @@ import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), tsconfigPaths()],
-  base: '/vibecoach-ai-mentor/',
+  base: process.env.GITHUB_ACTIONS ? '/vibecoach-ai-mentor/' : '/',
+  
   build: {
     outDir: 'dist',
     cssMinify: false
