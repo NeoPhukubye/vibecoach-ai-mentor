@@ -251,8 +251,9 @@ function InterviewRoom() {
           <div>
             <h1 className="text-2xl font-bold sm:text-3xl">Live Interview</h1>
             <p className="text-sm text-muted-foreground">
-              {job?.jobTitle} · {INTERVIEW_TYPES.find((t) => t.value === (job?.interviewType ?? "mixed"))?.label}{" "}
-              format · {INTERVIEW_LANGUAGES.find((l) => l.value === (job?.language ?? "en"))?.label ?? "English"} · Simulated by VibeCoach AI
+              {job?.jobTitle} · {SENIORITY_LEVELS.find((s) => s.value === (job?.seniority ?? "mid"))?.label} ·{" "}
+              {INTERVIEW_TYPES.find((t) => t.value === (job?.interviewType ?? "mixed"))?.label} format ·{" "}
+              {INTERVIEW_LANGUAGES.find((l) => l.value === (job?.language ?? "en"))?.label ?? "English"} · Adaptive AI interviewer
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
@@ -355,25 +356,55 @@ function InterviewRoom() {
           </div>
 
           <Card className="flex flex-col border-border/60 bg-card/70 p-6 backdrop-blur">
-            <div className="mb-6 space-y-2">
+            <div className="mb-5 space-y-2">
               <div className="flex items-center justify-between text-xs font-medium">
                 <span className="text-muted-foreground">
-                  Question <span className="text-foreground">{current + 1}</span> of {total}
+                  {isPractical ? "Practical task" : "Verbal question"} <span className="text-foreground">{current + 1}</span> of {total}
+                  <span className="ml-2 text-[10px] text-muted-foreground/70">({verbalCount} verbal · {total - verbalCount} practical)</span>
                 </span>
                 <span className="text-accent">{Math.round(((current + 1) / total) * 100)}%</span>
               </div>
               <Progress value={((current + 1) / total) * 100} className="h-2" />
             </div>
 
-            <div className="mb-6 flex-1 rounded-xl border border-border/60 bg-background/60 p-6">
-              <p className="text-xs font-medium uppercase tracking-wider text-accent">Current question</p>
-              <p className="mt-3 text-lg leading-relaxed sm:text-xl">{questions[current]}</p>
+            <div className="mb-4 flex-1 rounded-xl border border-border/60 bg-background/60 p-6">
+              <div className="flex items-center gap-2">
+                {isPractical ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent">
+                    <ClipboardCheck className="h-3 w-3" /> Practical
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    <MessageSquare className="h-3 w-3" /> Verbal
+                  </span>
+                )}
+                {!isPractical && current > 0 && (answers[current - 1]?.trim().length ?? 0) >= 15 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+                    <Sparkles className="h-3 w-3" /> Follow-up
+                  </span>
+                )}
+              </div>
+              <p className="mt-3 whitespace-pre-wrap text-base leading-relaxed sm:text-lg">{questions[current]}</p>
             </div>
 
-            <div className="mb-6 flex flex-col items-center gap-3">
+            <div className="mb-4">
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                {isPractical
+                  ? "Solution notes (paste code, outline, or approach — used to tailor scoring)"
+                  : "Answer notes (jot key points — the interviewer builds the next question from these)"}
+              </label>
+              <Textarea
+                value={answers[current] ?? ""}
+                onChange={(e) => handleAnswerChange(e.target.value)}
+                placeholder={isPractical ? "Outline your approach, trade-offs, and any code…" : "Speak or type the essence of your answer here…"}
+                className="min-h-[110px] resize-none border-border/60 bg-background/60 text-sm"
+              />
+            </div>
+
+            <div className="mb-4 flex flex-col items-center gap-2">
               <button
                 onClick={() => setRecording((r) => !r)}
-                className={`group relative grid h-24 w-24 place-items-center rounded-full transition-all ${
+                className={`group relative grid h-16 w-16 place-items-center rounded-full transition-all ${
                   recording
                     ? "bg-destructive shadow-[0_0_0_8px_oklch(0.65_0.22_25/0.15)]"
                     : "gradient-primary shadow-glow hover:scale-105"
@@ -382,10 +413,10 @@ function InterviewRoom() {
                 {recording && (
                   <span className="absolute inset-0 animate-ping rounded-full bg-destructive/40" />
                 )}
-                <Mic className="h-9 w-9 text-primary-foreground" />
+                <Mic className="h-6 w-6 text-primary-foreground" />
               </button>
-              <p className="text-sm font-medium">
-                {recording ? "Recording... click to stop" : "Click to Record Answer"}
+              <p className="text-xs font-medium text-muted-foreground">
+                {recording ? "Recording… click to stop" : "Or click to record your answer"}
               </p>
             </div>
 
@@ -393,7 +424,7 @@ function InterviewRoom() {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={current === 0}
+                disabled={current === 0 || advancing}
                 onClick={() => setCurrent((c) => Math.max(0, c - 1))}
               >
                 <ChevronLeft className="mr-1 h-4 w-4" /> Previous
@@ -401,10 +432,19 @@ function InterviewRoom() {
               {current < total - 1 ? (
                 <Button
                   size="sm"
-                  onClick={() => setCurrent((c) => c + 1)}
+                  onClick={handleNext}
+                  disabled={advancing}
                   className="gradient-primary text-primary-foreground"
                 >
-                  Next question <ChevronRight className="ml-1 h-4 w-4" />
+                  {advancing ? (
+                    <>
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" /> Interviewer thinking…
+                    </>
+                  ) : (
+                    <>
+                      Next question <ChevronRight className="ml-1 h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               ) : (
                 <Button
