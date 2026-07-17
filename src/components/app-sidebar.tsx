@@ -1,8 +1,9 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Video, BarChart3, Sparkles, LogOut, LogIn } from "lucide-react";
+import { LayoutDashboard, Video, BarChart3, Sparkles, LogOut, LogIn, Hand } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { useSignLanguage } from "@/lib/sign-language-context";
 import {
   Sidebar,
   SidebarContent,
@@ -23,11 +24,12 @@ const items = [
   { title: "Performance Analytics", url: "/analytics", icon: BarChart3 },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ onOpenAccessibility }: { onOpenAccessibility?: () => void }) {
   const currentPath = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (path: string) => currentPath === path;
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const { settings, toggleEnabled } = useSignLanguage();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));

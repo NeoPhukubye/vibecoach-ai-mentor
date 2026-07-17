@@ -4,12 +4,15 @@ import {
   createRootRouteWithContext,
   useRouter,
 } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { SignLanguageProvider } from "@/lib/sign-language-context";
+import { SignLanguageAvatar } from "@/components/sign-language-avatar";
+import { AccessibilitySettings } from "@/components/accessibility-settings";
 
 function NotFoundComponent() {
   return (
@@ -33,6 +36,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const [accessibilityOpen, setAccessibilityOpen] = useState(false);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
@@ -46,21 +50,25 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-background">
-          <AppSidebar />
-          <div className="flex flex-1 flex-col">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur">
-              <SidebarTrigger />
-              <div className="text-sm text-muted-foreground">VibeCoach Studio</div>
-            </header>
-            <main className="flex-1">
-              <Outlet />
-            </main>
+      <SignLanguageProvider>
+        <SidebarProvider>
+          <div className="flex min-h-screen w-full bg-background">
+            <AppSidebar onOpenAccessibility={() => setAccessibilityOpen(true)} />
+            <div className="flex flex-1 flex-col">
+              <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/70 px-4 backdrop-blur">
+                <SidebarTrigger />
+                <div className="text-sm text-muted-foreground">VibeCoach Studio</div>
+              </header>
+              <main className="flex-1">
+                <Outlet />
+              </main>
+            </div>
           </div>
-        </div>
-        <Toaster />
-      </SidebarProvider>
+          <SignLanguageAvatar />
+          <AccessibilitySettings open={accessibilityOpen} onClose={() => setAccessibilityOpen(false)} />
+          <Toaster />
+        </SidebarProvider>
+      </SignLanguageProvider>
     </QueryClientProvider>
   );
 }
