@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Mic, Video, VideoOff, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2, CameraOff, Hand } from "lucide-react";
+import { Mic, Video, VideoOff, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2, CameraOff, Hand, ClipboardCheck, MessageSquare, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { generateInterviewQuestions, INTERVIEW_TYPES, INTERVIEW_LANGUAGES, type InterviewType } from "@/lib/interview.functions";
+import { Textarea } from "@/components/ui/textarea";
+import { generateInterviewQuestions, generateFollowUp, INTERVIEW_TYPES, INTERVIEW_LANGUAGES, SENIORITY_LEVELS, type InterviewType, type Seniority } from "@/lib/interview.functions";
 import { saveInterviewSession } from "@/lib/sessions.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { SignLanguageAvatar } from "@/components/sign-language-avatar";
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/interview")({
   component: InterviewRoom,
 });
 
-type JobPayload = { jobTitle: string; jobDescription: string; interviewType?: InterviewType; language?: string };
+type JobPayload = { jobTitle: string; jobDescription: string; interviewType?: InterviewType; seniority?: Seniority; language?: string };
 
 function synthesizeResults(questions: string[], startedAt: number) {
   // Lightweight mock scoring so improvement can be tracked over time.
@@ -60,8 +61,11 @@ function InterviewRoom() {
   const [current, setCurrent] = useState(0);
   const [recording, setRecording] = useState(false);
   const [questions, setQuestions] = useState<string[]>([]);
+  const [verbalCount, setVerbalCount] = useState(0);
+  const [answers, setAnswers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [finishing, setFinishing] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
   const [job, setJob] = useState<JobPayload | null>(null);
   const startedAtRef = useRef<number>(Date.now());
   const videoRef = useRef<HTMLVideoElement | null>(null);
