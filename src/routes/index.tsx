@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Rocket, Briefcase, FileText, Sparkles, Target, Timer, Layers, Users, Code2, ClipboardCheck, Globe, Hand } from "lucide-react";
+import { Rocket, Briefcase, FileText, Sparkles, Target, Timer, Layers, Users, Code2, ClipboardCheck, Globe, Hand, GraduationCap } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { INTERVIEW_TYPES, INTERVIEW_LANGUAGES, type InterviewType, type InterviewLanguage } from "@/lib/interview.functions";
+import { INTERVIEW_TYPES, INTERVIEW_LANGUAGES, SENIORITY_LEVELS, type InterviewType, type InterviewLanguage, type Seniority } from "@/lib/interview.functions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSignLanguage, SIGN_LANGUAGES } from "@/lib/sign-language-context";
 
@@ -33,6 +33,7 @@ function SetupDashboard() {
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [interviewType, setInterviewType] = useState<InterviewType>("mixed");
+  const [seniority, setSeniority] = useState<Seniority>("mid");
   const [language, setLanguage] = useState<InterviewLanguage>("en");
   const [user, setUser] = useState<User | null>(null);
   const { settings, updateSettings } = useSignLanguage();
@@ -138,6 +139,32 @@ function SetupDashboard() {
                 </div>
               </div>
 
+              {/* Seniority selection */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <GraduationCap className="h-4 w-4 text-primary" />
+                  Seniority level
+                </label>
+                <Select value={seniority} onValueChange={(val) => setSeniority(val as Seniority)}>
+                  <SelectTrigger className="h-12 border-border/60 bg-background/60">
+                    <SelectValue placeholder="Select seniority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SENIORITY_LEVELS.map((level) => (
+                      <SelectItem key={level.value} value={level.value}>
+                        <span className="flex flex-col">
+                          <span className="text-sm font-medium">{level.label}</span>
+                          <span className="text-xs text-muted-foreground">{level.description}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Question depth and practical difficulty scale to this level.
+                </p>
+              </div>
+
               {/* Language selection */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium">
@@ -214,7 +241,7 @@ function SetupDashboard() {
                   onClick={() => {
                     sessionStorage.setItem(
                       "vibecoach:job",
-                      JSON.stringify({ jobTitle, jobDescription, interviewType, language })
+                      JSON.stringify({ jobTitle, jobDescription, interviewType, seniority, language })
                     );
                     navigate({ to: "/interview" });
                   }}

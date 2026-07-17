@@ -1,1 +1,7 @@
 project_id = "vpuhqiasooyndywumqud"
+
+[functions.generate-questions]
+verify_jwt = true
+
+[functions.follow-up-question]
+verify_jwt = true
