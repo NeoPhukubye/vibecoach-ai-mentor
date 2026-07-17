@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Rocket, Briefcase, FileText, Sparkles, Target, Timer, Layers, Users, Code2, ClipboardCheck, Globe, Hand } from "lucide-react";
+import { Rocket, Briefcase, FileText, Sparkles, Target, Timer, Layers, Users, Code2, ClipboardCheck, Globe, Hand, GraduationCap } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { INTERVIEW_TYPES, INTERVIEW_LANGUAGES, type InterviewType, type InterviewLanguage } from "@/lib/interview.functions";
+import { INTERVIEW_TYPES, INTERVIEW_LANGUAGES, SENIORITY_LEVELS, type InterviewType, type InterviewLanguage, type Seniority } from "@/lib/interview.functions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSignLanguage, SIGN_LANGUAGES } from "@/lib/sign-language-context";
 
@@ -33,6 +33,7 @@ function SetupDashboard() {
   const [jobTitle, setJobTitle] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [interviewType, setInterviewType] = useState<InterviewType>("mixed");
+  const [seniority, setSeniority] = useState<Seniority>("mid");
   const [language, setLanguage] = useState<InterviewLanguage>("en");
   const [user, setUser] = useState<User | null>(null);
   const { settings, updateSettings } = useSignLanguage();
