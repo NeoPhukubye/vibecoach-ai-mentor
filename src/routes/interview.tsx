@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Mic, Video, VideoOff, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2, CameraOff } from "lucide-react";
+import { Mic, Video, VideoOff, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2, CameraOff, Hand } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,9 @@ import { Progress } from "@/components/ui/progress";
 import { generateInterviewQuestions, INTERVIEW_TYPES, type InterviewType } from "@/lib/interview.functions";
 import { saveInterviewSession } from "@/lib/sessions.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { SignLanguageAvatar } from "@/components/sign-language-avatar";
+import { SignRecognitionOverlay } from "@/components/sign-recognition-overlay";
+import { useSignLanguage } from "@/lib/sign-language-context";
 
 export const Route = createFileRoute("/interview")({
   ssr: false,
@@ -65,6 +68,7 @@ function InterviewRoom() {
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const { settings: signSettings } = useSignLanguage();
 
   useEffect(() => {
     let cancelled = false;
@@ -254,7 +258,21 @@ function InterviewRoom() {
                   >
                     {cameraOn ? <VideoOff className="h-3.5 w-3.5" /> : <Video className="h-3.5 w-3.5" />}
                   </button>
+                  {/* Sign language recognition indicator */}
+                  {signSettings.enabled && signSettings.signRecognitionEnabled && (
+                    <div className="absolute top-1.5 right-1.5 flex items-center gap-1 rounded bg-primary/80 px-1.5 py-0.5 text-[9px] text-primary-foreground backdrop-blur">
+                      <Hand className="h-2.5 w-2.5" />
+                      Sign
+                    </div>
+                  )}
                 </div>
+
+                {/* Sign recognition overlay below the video */}
+                {signSettings.enabled && signSettings.signRecognitionEnabled && (
+                  <div className="absolute bottom-4 left-4 right-60 sm:right-72">
+                    <SignRecognitionOverlay videoElement={videoRef.current} />
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-border/60 bg-card/80 p-6">

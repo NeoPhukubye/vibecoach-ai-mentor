@@ -84,6 +84,27 @@ export function AppSidebar({ onOpenAccessibility }: { onOpenAccessibility?: () =
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Accessibility</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  tooltip="Sign Language Mode"
+                  onClick={onOpenAccessibility}
+                  className="flex items-center gap-3"
+                >
+                  <Hand className={`h-4 w-4 shrink-0 ${settings.enabled ? "text-primary" : ""}`} />
+                  <span className="truncate">Sign Language</span>
+                  {settings.enabled && (
+                    <span className="ml-auto h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">

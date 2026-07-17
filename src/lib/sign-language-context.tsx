@@ -34,6 +34,8 @@ interface SignLanguageContextType {
   settings: SignLanguageSettings;
   updateSettings: (partial: Partial<SignLanguageSettings>) => void;
   toggleEnabled: () => void;
+  activeText: string;
+  setActiveText: (text: string) => void;
 }
 
 const DEFAULT_SETTINGS: SignLanguageSettings = {
@@ -57,6 +59,7 @@ export function SignLanguageProvider({ children }: { children: ReactNode }) {
     } catch {}
     return DEFAULT_SETTINGS;
   });
+  const [activeText, setActiveText] = useState("");
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -71,7 +74,7 @@ export function SignLanguageProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <SignLanguageContext.Provider value={{ settings, updateSettings, toggleEnabled }}>
+    <SignLanguageContext.Provider value={{ settings, updateSettings, toggleEnabled, activeText, setActiveText }}>
       {children}
     </SignLanguageContext.Provider>
   );
