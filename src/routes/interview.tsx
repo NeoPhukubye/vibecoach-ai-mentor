@@ -143,13 +143,16 @@ function InterviewRoom() {
         const res = await generateInterviewQuestions({
           jobTitle: parsed.jobTitle,
           jobDescription: parsed.jobDescription,
+          seniority: parsed.seniority ?? "mid",
           interviewType: parsed.interviewType ?? "mixed",
           language: parsed.language ?? "en",
         });
-        setQuestions(res?.questions ?? []);
+        setQuestions(res.questions);
+        setVerbalCount(res.verbal.length);
+        setAnswers(new Array(res.questions.length).fill(""));
       } catch (e) {
         console.error(e);
-        toast.error("Failed to generate questions. Try again.");
+        toast.error(e instanceof Error ? e.message : "Failed to generate questions. Try again.");
         navigate({ to: "/" });
       } finally {
         setLoading(false);
@@ -158,6 +161,52 @@ function InterviewRoom() {
   }, [navigate]);
 
   const total = questions.length;
+  const isPractical = current >= verbalCount;
+
+  const handleAnswerChange = (val: string) => {
+    setAnswers((prev) => {
+      const next = prev.slice();
+      next[current] = val;
+      return next;
+    });
+  };
+
+  const handleNext = async () => {
+    if (!job || current >= total - 1) return;
+    const nextIndex = current + 1;
+    const nextIsPractical = nextIndex >= verbalCount;
+    const answerText = (answers[current] ?? "").trim();
+
+    // Adaptive follow-up: only refine when moving between verbal questions and
+    // the candidate actually left notes for the interviewer to build on.
+    if (!nextIsPractical && !isPractical && answerText.length >= 15) {
+      setAdvancing(true);
+      try {
+        const refined = await generateFollowUp({
+          jobTitle: job.jobTitle,
+          seniority: job.seniority ?? "mid",
+          language: job.language ?? "en",
+          previousQuestion: questions[current],
+          previousAnswer: answerText,
+          plannedNextQuestion: questions[nextIndex],
+        });
+        if (refined && refined !== questions[nextIndex]) {
+          setQuestions((prev) => {
+            const copy = prev.slice();
+            copy[nextIndex] = refined;
+            return copy;
+          });
+          toast.success("Interviewer is building on your answer");
+        }
+      } catch (e) {
+        console.error(e);
+        // Silent fallback — keep planned question.
+      } finally {
+        setAdvancing(false);
+      }
+    }
+    setCurrent(nextIndex);
+  };
 
   const handleFinish = async () => {
     if (!job) return;
