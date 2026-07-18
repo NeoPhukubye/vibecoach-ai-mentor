@@ -554,7 +554,13 @@ function InterviewRoom() {
               </p>
             </div>
 
-            <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-4">
+            {phaseExpired && (
+              <div className="mb-3 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {isPractical ? "Practical" : "Verbal"} time is up. Wrap this answer and move on — in a real interview the panel would too.
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -563,6 +569,20 @@ function InterviewRoom() {
               >
                 <ChevronLeft className="mr-1 h-4 w-4" /> Previous
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAskFollowUp}
+                disabled={askingFollowUp || advancing}
+                title="Ask the interviewer to probe deeper on this answer"
+              >
+                {askingFollowUp ? (
+                  <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Thinking…</>
+                ) : (
+                  <><HelpCircle className="mr-1 h-4 w-4" /> Ask follow-up</>
+                )}
+              </Button>
+
               {current < total - 1 ? (
                 <Button
                   size="sm"
