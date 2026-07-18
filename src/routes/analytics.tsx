@@ -301,7 +301,10 @@ function Analytics() {
                 </li>
               ))}
             </ul>
-          </Card>
+            </Card>
+          </div>
+
+
 
           {/* Session history list */}
           <Card className="border-border/60 bg-card/70 p-4 backdrop-blur">
