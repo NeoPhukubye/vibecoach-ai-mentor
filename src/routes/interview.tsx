@@ -327,7 +327,7 @@ function InterviewRoom() {
     if (!job) return;
     setFinishing(true);
     try {
-      const results = synthesizeResults(questions, startedAtRef.current);
+      const results = synthesizeResults(questions, answers, verbalCount, startedAtRef.current);
       const { id } = await saveInterviewSession({
         jobTitle: job.jobTitle,
         jobDescription: job.jobDescription,
