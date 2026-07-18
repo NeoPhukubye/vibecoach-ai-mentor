@@ -11,6 +11,7 @@ export async function saveInterviewSession(data: {
   fillerCount: number;
   fillerBreakdown: Record<string, number>;
   feedback: { type: string; title: string; detail: string }[];
+  questionScores?: { question: string; score: number; note: string }[];
   durationSeconds: number;
 }): Promise<{ id: string }> {
   const { data: session } = await supabase.auth.getSession();
@@ -26,6 +27,7 @@ export async function saveInterviewSession(data: {
     filler_count: data.fillerCount,
     filler_breakdown: data.fillerBreakdown,
     feedback: data.feedback,
+    question_scores: data.questionScores ?? [],
     duration_seconds: data.durationSeconds,
   };
 
@@ -35,15 +37,17 @@ export async function saveInterviewSession(data: {
     .select("id")
     .single();
 
-  if (error && (error.code === "42703" || error.message.includes("interview_type"))) {
+  if (error && (error.code === "42703" || error.message.includes("interview_type") || error.message.includes("question_scores"))) {
+    const { question_scores: _qs, interview_type: _it, ...fallback } = { ...baseRow, interview_type: data.interviewType } as Record<string, unknown>;
     const retry = await supabase
       .from("interview_sessions")
-      .insert(baseRow)
+      .insert(fallback as never)
       .select("id")
       .single();
     row = retry.data;
     error = retry.error;
   }
+
 
   if (error) throw new Error(error.message);
   return { id: row!.id as string };
