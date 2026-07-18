@@ -1,117 +1,77 @@
 # VibeCoach — AI Interview Simulator
 
-Practice for your next interview with tailored, AI-generated questions. Paste in a job title and description, and VibeCoach's backend calls Google Gemini to produce a technical, a situational, and a cultural-fit question — then walks you through a mock interview session with performance analytics.
+Practice for your next interview with an adaptive, AI-driven mock interviewer. Paste a job title, description, and seniority level and VibeCoach generates a full role-specific interview — 8 verbal questions plus 2 practical tasks — with follow-ups, live self-view video, and per-question scoring saved to your history.
 
 ## Features
 
-- **Setup dashboard** — enter a job title and description to configure a practice session
-- **AI-generated questions** — a FastAPI backend calls Google's Gemini API (`gemini-2.5-flash`) to generate one technical, one situational, and one cultural-fit question tailored to the role
-- **Interview room** — timed mock interview flow for answering the generated questions
-- **Performance analytics** — review scores and session history
+### Interview experience
+- **Setup dashboard** — enter a job title, paste the job description, pick a seniority level (Intern → Team Lead), an interview focus (Full / Behavioral / Technical / Practical), and an interview language.
+- **Role-specific AI questions** — a Supabase Edge Function calls Google Gemini via the Lovable AI Gateway to generate every question fresh for the pasted role. No canned question banks.
+- **8 verbal + 2 practical structure** — every session follows the same shape (2 warm-up, 3 behavioral, 3 role-specific, 2 practical tasks) with difficulty calibrated to the chosen seniority.
+- **Adaptive follow-ups** — the interviewer builds on the candidate's notes:
+  - Automatic follow-up: when you press *Next question* after a verbal answer, the AI can rewrite the upcoming question as a natural follow-up on what you actually said.
+  - Manual follow-up: an **Ask follow-up** button asks the AI to insert a deeper probing sub-question on the current answer, so a candidate can practise being pushed harder in real time.
+- **Timed phases** — a live countdown for each phase to mimic real interview pressure:
+  - **Verbal phase: 25 minutes**
+  - **Practical / technical assessment: 30 minutes**
+  - Warns at under 1 minute; shows an *"time is up"* banner when the phase timer runs out.
+- **Live self-view video** — mirrored webcam PIP so candidates get used to being on camera. Camera on/off toggle, graceful fallback if the browser blocks access.
+- **AI interviewer avatar + waveform** — a stylised avatar panel with an animated audio waveform for immersion.
+- **Multi-language interviews** — questions can be generated in 18 languages (English, Spanish, French, German, Portuguese, Mandarin, Japanese, Korean, Arabic, Hindi, Zulu, Afrikaans, Swahili, Italian, Dutch, Russian, Turkish, Polish).
+- **Accessibility** — optional sign-language avatar mode and sign-recognition overlay for practising with different input/output modalities.
+
+### Scoring and analytics
+- **Per-question scoring** — every answer is scored out of 100 with a short coaching note (structure, specifics, coverage) and shown as its own card on the report.
+- **Overall metrics** — overall score /100, clarity /10, and filler-word count with a breakdown of `um`, `like`, and `you know` tallies.
+- **Progress over time** — sessions are persisted per user; the analytics page renders a trend chart, "vs previous session" deltas, and a written session summary comparing you against your own average.
+- **Session history** — sidebar lets you jump between past sessions to compare feedback.
+- **PDF export** — one-click download of a detailed report for the selected session.
+
+### Accounts and persistence
+- **Google sign-in** and email + password (with email verification and password reset) via Lovable Cloud auth.
+- Sessions are stored in a Supabase Postgres table (`interview_sessions`) protected by row-level security — every user only sees their own history.
 
 ## Tech stack
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | [TanStack Start](https://tanstack.com/start) + TanStack Router, React 19, Tailwind CSS v4, shadcn/ui, Vite 8 |
-| Backend | [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12), [google-genai](https://pypi.org/project/google-genai/) SDK |
-| Package managers | [Bun](https://bun.sh/) (frontend), [uv](https://docs.astral.sh/uv/) (backend) |
+| Frontend | TanStack Start + TanStack Router, React 18, Tailwind CSS, shadcn/ui, Vite |
+| Backend | Lovable Cloud (Supabase) — Postgres, Auth, Edge Functions (Deno) |
+| AI | Lovable AI Gateway → Google Gemini (`gemini-2.5-flash`) |
+| Package manager | Bun |
 
 ## Project structure
 
 ```
-├── src/                    # Frontend source
-│   ├── routes/              # File-based routes (TanStack Router)
-│   │   ├── index.tsx           # Setup dashboard
-│   │   ├── interview.tsx       # Interview room
-│   │   ├── analytics.tsx       # Performance analytics
-│   │   └── __root.tsx          # App shell / layout
-│   ├── components/           # UI components (shadcn/ui based)
-│   └── lib/                  # Shared utilities
-├── backend/
-│   └── main.py               # FastAPI app: /api/generate-questions endpoint
-├── vite.config.ts           # Vite / TanStack Start / Nitro build config
-└── pyproject.toml           # Backend Python dependencies
+├── src/
+│   ├── routes/
+│   │   ├── index.tsx        # Setup dashboard
+│   │   ├── interview.tsx    # Live interview room (timers, follow-ups, video)
+│   │   ├── analytics.tsx    # Performance report, per-question scoring, history
+│   │   ├── auth.tsx         # Sign in / sign up / reset password
+│   │   └── __root.tsx       # App shell + sidebar
+│   ├── components/          # UI components (shadcn/ui based)
+│   ├── lib/                 # Interview + session helpers, PDF export
+│   └── integrations/supabase # Auto-generated Supabase client + types
+├── supabase/
+│   ├── functions/
+│   │   ├── generate-questions/   # Builds the 8+2 interview plan
+│   │   └── follow-up-question/   # Generates adaptive follow-up questions
+│   └── migrations/               # Database schema (interview_sessions, question_scores)
+└── vite.config.ts
 ```
 
 ## Getting started
 
-### Prerequisites
-
-- [Bun](https://bun.sh/) for the frontend
-- Python 3.12+ with [uv](https://docs.astral.sh/uv/) for the backend
-- A `GEMINI_API_KEY` (get one from [Google AI Studio](https://aistudio.google.com/apikey))
-
-### Setup
-
-1. Install frontend dependencies:
-   ```bash
-   bun install
-   ```
-2. Install backend dependencies:
-   ```bash
-   uv sync
-   ```
-3. Set the `GEMINI_API_KEY` environment variable so the backend can call Gemini.
-
-### Run
-
-Run the two services in separate terminals:
-
 ```bash
-# Frontend — served on http://localhost:5000
+bun install
 bun run dev
-
-# Backend API — served on http://localhost:8000
-python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-On Replit, both are already wired up as workflows (**Frontend** and **Backend API**) that start automatically.
+Lovable Cloud (Supabase) is provisioned automatically; the AI Gateway key is already configured. Open the app, sign up (or continue with Google), and launch your first interview from the setup dashboard.
 
-### Build for production
+## Build for production
 
 ```bash
 bun run build
 ```
-
-This produces a Node-runnable server in `.output/` (via Nitro's `node-server` preset).
-
-## Backend API
-
-### `POST /api/generate-questions`
-
-Generates three interview questions tailored to a job.
-
-**Request body:**
-```json
-{
-  "job_title": "Senior Product Designer",
-  "job_description": "..."
-}
-```
-
-**Response:**
-```json
-{
-  "questions": [
-    "Technical question...",
-    "Situational question...",
-    "Cultural-fit question..."
-  ]
-}
-```
-
-Requires `GEMINI_API_KEY` to be set. Errors from the Gemini API are returned as HTTP 500 with a descriptive message. CORS is open to all origins so the frontend can call it from any host.
-
-### `GET /`
-
-Health check — returns `{ "status": "ok" }`.
-
-## Deployment
-
-The app deploys as a single autoscale service: the build step runs `bun run build`, and the run command starts both the FastAPI backend and the built Node frontend server side by side. Make sure `GEMINI_API_KEY` is set in the production environment as well as development.
-
-## Notes
-
-- The Interview route currently uses sample questions; wiring the setup form to `/api/generate-questions` is tracked as a follow-up.
-- This project was originally imported from Lovable and adapted to run on Replit.
