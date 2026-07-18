@@ -28,6 +28,7 @@ function interviewTypeLabel(value?: string) {
 }
 
 type FeedbackItem = { type: "good" | "warn"; title: string; detail: string };
+type QuestionScore = { question: string; score: number; note: string };
 type SessionRow = {
   id: string;
   job_title: string;
@@ -37,9 +38,11 @@ type SessionRow = {
   filler_count: number;
   filler_breakdown: Record<string, number>;
   feedback: FeedbackItem[];
+  question_scores?: QuestionScore[];
   duration_seconds: number;
   created_at: string;
 };
+
 
 export const Route = createFileRoute("/analytics")({
   ssr: false,
