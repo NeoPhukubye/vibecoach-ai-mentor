@@ -371,13 +371,32 @@ function InterviewRoom() {
               {INTERVIEW_LANGUAGES.find((l) => l.value === (job?.language ?? "en"))?.label ?? "English"} · Adaptive AI interviewer
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
-            </span>
-            LIVE
+          <div className="flex items-center gap-2">
+            <div
+              className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${
+                phaseExpired
+                  ? "border-destructive/60 bg-destructive/15 text-destructive"
+                  : phaseRemaining < 60
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                  : "border-border bg-card/60 text-muted-foreground"
+              }`}
+              title={`${isPractical ? "Practical" : "Verbal"} phase limit: ${phaseLimit / 60} min`}
+            >
+              <Timer className="h-3.5 w-3.5" />
+              <span className="tabular-nums">{formatTime(phaseRemaining)}</span>
+              <span className="hidden sm:inline">
+                {isPractical ? "practical" : "verbal"} left
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+              </span>
+              LIVE
+            </div>
           </div>
+
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
