@@ -197,6 +197,8 @@ function InterviewRoom() {
       const parsed = JSON.parse(raw) as JobPayload;
       setJob(parsed);
       startedAtRef.current = Date.now();
+      verbalStartRef.current = Date.now();
+      practicalStartRef.current = null;
       try {
         const res = await generateInterviewQuestions({
           jobTitle: parsed.jobTitle,
@@ -221,6 +223,20 @@ function InterviewRoom() {
   const total = questions.length;
   const isPractical = current >= verbalCount;
 
+  // Start the practical timer the first time the candidate enters that phase.
+  useEffect(() => {
+    if (isPractical && practicalStartRef.current === null) {
+      practicalStartRef.current = Date.now();
+    }
+  }, [isPractical]);
+
+  const phaseElapsed = isPractical
+    ? Math.floor((now - (practicalStartRef.current ?? now)) / 1000)
+    : Math.floor((now - verbalStartRef.current) / 1000);
+  const phaseLimit = isPractical ? PRACTICAL_TIME_LIMIT : VERBAL_TIME_LIMIT;
+  const phaseRemaining = Math.max(0, phaseLimit - phaseElapsed);
+  const phaseExpired = phaseRemaining === 0;
+
   const handleAnswerChange = (val: string) => {
     setAnswers((prev) => {
       const next = prev.slice();
@@ -228,6 +244,47 @@ function InterviewRoom() {
       return next;
     });
   };
+
+  const handleAskFollowUp = async () => {
+    if (!job) return;
+    const answerText = (answers[current] ?? "").trim();
+    if (answerText.length < 10) {
+      toast.error("Jot a few notes on your answer first — the interviewer needs something to build on.");
+      return;
+    }
+    setAskingFollowUp(true);
+    try {
+      const refined = await generateFollowUp({
+        jobTitle: job.jobTitle,
+        seniority: job.seniority ?? "mid",
+        language: job.language ?? "en",
+        previousQuestion: questions[current],
+        previousAnswer: answerText,
+      });
+      if (!refined) throw new Error("No follow-up returned");
+      const insertAt = current + 1;
+      setQuestions((prev) => {
+        const copy = prev.slice();
+        copy.splice(insertAt, 0, refined);
+        return copy;
+      });
+      setAnswers((prev) => {
+        const copy = prev.slice();
+        copy.splice(insertAt, 0, "");
+        return copy;
+      });
+      // A verbal follow-up keeps the verbal/practical boundary in the same place.
+      if (!isPractical) setVerbalCount((v) => v + 1);
+      setCurrent(insertAt);
+      toast.success("Follow-up added — go deeper.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate a follow-up. Try again.");
+    } finally {
+      setAskingFollowUp(false);
+    }
+  };
+
 
   const handleNext = async () => {
     if (!job || current >= total - 1) return;
