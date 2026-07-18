@@ -113,13 +113,24 @@ function InterviewRoom() {
   const [loading, setLoading] = useState(true);
   const [finishing, setFinishing] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [askingFollowUp, setAskingFollowUp] = useState(false);
   const [job, setJob] = useState<JobPayload | null>(null);
   const startedAtRef = useRef<number>(Date.now());
+  const verbalStartRef = useRef<number>(Date.now());
+  const practicalStartRef = useRef<number | null>(null);
+  const [now, setNow] = useState<number>(Date.now());
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const { settings: signSettings, setActiveText } = useSignLanguage();
+
+  // Tick every second for the countdown timer.
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
 
   // Feed current question to the sign language avatar
   useEffect(() => {
