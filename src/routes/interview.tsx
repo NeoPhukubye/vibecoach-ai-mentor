@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { Mic, Video, VideoOff, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2, CameraOff, Hand, ClipboardCheck, MessageSquare, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Mic, Video, VideoOff, ChevronRight, ChevronLeft, BarChart3, Circle, Loader2, CameraOff, Hand, ClipboardCheck, MessageSquare, Sparkles, Timer, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,23 +26,62 @@ export const Route = createFileRoute("/interview")({
 
 type JobPayload = { jobTitle: string; jobDescription: string; interviewType?: InterviewType; seniority?: Seniority; language?: string };
 
-function synthesizeResults(questions: string[], startedAt: number) {
-  // Lightweight mock scoring so improvement can be tracked over time.
-  // Replace with real speech-analysis output later.
-  const base = 68 + Math.floor(Math.random() * 27); // 68-94
-  const clarity = Math.round((6 + Math.random() * 3.5) * 10) / 10;
-  const um = Math.floor(Math.random() * 8);
-  const like = Math.floor(Math.random() * 7);
-  const youKnow = Math.floor(Math.random() * 5);
+const VERBAL_TIME_LIMIT = 25 * 60; // 25 minutes
+const PRACTICAL_TIME_LIMIT = 30 * 60; // 30 minutes
+
+function scoreAnswer(answer: string, isPractical: boolean): { score: number; note: string } {
+  const text = (answer ?? "").trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  if (words === 0) return { score: 0, note: "No answer captured — skipped." };
+  const target = isPractical ? 120 : 60;
+  const coverage = Math.min(1, words / target);
+  const structureBonus = /(first|then|because|result|impact|metric|approach)/i.test(text) ? 12 : 0;
+  const specificsBonus = /\d/.test(text) ? 8 : 0;
+  const base = Math.round(40 + coverage * 40 + structureBonus + specificsBonus);
+  const score = Math.max(20, Math.min(100, base));
+  const note =
+    score >= 85 ? "Strong — specific, structured, and on target."
+    : score >= 70 ? "Solid — cover a bit more depth or concrete metrics."
+    : score >= 50 ? "OK — add structure (STAR) and concrete outcomes."
+    : "Thin — expand with context, action, and measurable result.";
+  return { score, note };
+}
+
+function synthesizeResults(
+  questions: string[],
+  answers: string[],
+  verbalCount: number,
+  startedAt: number,
+) {
+  const perQuestion = questions.map((q, i) => {
+    const { score, note } = scoreAnswer(answers[i] ?? "", i >= verbalCount);
+    return { question: q, score, note };
+  });
+  const scored = perQuestion.filter((p) => p.score > 0);
+  const base = scored.length
+    ? Math.round(scored.reduce((a, p) => a + p.score, 0) / scored.length)
+    : 0;
+  const clarity = Math.round((5 + (base / 100) * 4.5) * 10) / 10;
+  // Count filler words across all typed answers.
+  const joined = answers.join(" ").toLowerCase();
+  const um = (joined.match(/\bum+\b/g) ?? []).length;
+  const like = (joined.match(/\blike\b/g) ?? []).length;
+  const youKnow = (joined.match(/\byou know\b/g) ?? []).length;
   const filler = um + like + youKnow;
   const duration = Math.max(60, Math.floor((Date.now() - startedAt) / 1000));
 
+  const worst = [...perQuestion].filter((p) => p.score > 0).sort((a, b) => a.score - b.score)[0];
+  const best = [...perQuestion].sort((a, b) => b.score - a.score)[0];
+
   const feedback = [
-    { type: "good" as const, title: "Strong structural storytelling", detail: "You framed several answers with clear situation, action, and result." },
-    { type: "warn" as const, title: "Watch pacing during detail", detail: "A couple of answers rushed past key metrics — slow down when landing outcomes." },
-    { type: "good" as const, title: "Confident closing statements", detail: "You wrapped answers with decisive summaries, which reads as senior-level clarity." },
+    best && best.score >= 70
+      ? { type: "good" as const, title: "Strongest answer", detail: `${best.question.slice(0, 90)}${best.question.length > 90 ? "…" : ""} — scored ${best.score}/100.` }
+      : { type: "warn" as const, title: "Room to grow", detail: "No answer landed above 70/100 — practise structured STAR responses." },
+    worst
+      ? { type: "warn" as const, title: "Weakest answer to revisit", detail: `${worst.question.slice(0, 90)}${worst.question.length > 90 ? "…" : ""} — scored ${worst.score}/100. ${worst.note}` }
+      : { type: "good" as const, title: "Every question answered", detail: "You put something on every question — great commitment." },
     filler > 10
-      ? { type: "warn" as const, title: "Trim filler words", detail: `We heard ${filler} filler words across ${questions.length} answers. Pause instead of filling.` }
+      ? { type: "warn" as const, title: "Trim filler words", detail: `We counted ${filler} filler words. Pause instead of filling.` }
       : { type: "good" as const, title: "Clean delivery", detail: `Only ${filler} filler words across the session — very tight.` },
   ];
 
@@ -52,9 +91,17 @@ function synthesizeResults(questions: string[], startedAt: number) {
     fillerCount: filler,
     fillerBreakdown: { um, like, "you know": youKnow } as Record<string, number>,
     feedback,
+    questionScores: perQuestion,
     durationSeconds: duration,
   };
 }
+
+function formatTime(seconds: number) {
+  const m = Math.max(0, Math.floor(seconds / 60));
+  const s = Math.max(0, seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 
 function InterviewRoom() {
   const navigate = useNavigate();
@@ -66,13 +113,24 @@ function InterviewRoom() {
   const [loading, setLoading] = useState(true);
   const [finishing, setFinishing] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [askingFollowUp, setAskingFollowUp] = useState(false);
   const [job, setJob] = useState<JobPayload | null>(null);
   const startedAtRef = useRef<number>(Date.now());
+  const verbalStartRef = useRef<number>(Date.now());
+  const practicalStartRef = useRef<number | null>(null);
+  const [now, setNow] = useState<number>(Date.now());
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cameraOn, setCameraOn] = useState(true);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const { settings: signSettings, setActiveText } = useSignLanguage();
+
+  // Tick every second for the countdown timer.
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
 
   // Feed current question to the sign language avatar
   useEffect(() => {
@@ -139,6 +197,8 @@ function InterviewRoom() {
       const parsed = JSON.parse(raw) as JobPayload;
       setJob(parsed);
       startedAtRef.current = Date.now();
+      verbalStartRef.current = Date.now();
+      practicalStartRef.current = null;
       try {
         const res = await generateInterviewQuestions({
           jobTitle: parsed.jobTitle,
@@ -163,6 +223,20 @@ function InterviewRoom() {
   const total = questions.length;
   const isPractical = current >= verbalCount;
 
+  // Start the practical timer the first time the candidate enters that phase.
+  useEffect(() => {
+    if (isPractical && practicalStartRef.current === null) {
+      practicalStartRef.current = Date.now();
+    }
+  }, [isPractical]);
+
+  const phaseElapsed = isPractical
+    ? Math.floor((now - (practicalStartRef.current ?? now)) / 1000)
+    : Math.floor((now - verbalStartRef.current) / 1000);
+  const phaseLimit = isPractical ? PRACTICAL_TIME_LIMIT : VERBAL_TIME_LIMIT;
+  const phaseRemaining = Math.max(0, phaseLimit - phaseElapsed);
+  const phaseExpired = phaseRemaining === 0;
+
   const handleAnswerChange = (val: string) => {
     setAnswers((prev) => {
       const next = prev.slice();
@@ -170,6 +244,47 @@ function InterviewRoom() {
       return next;
     });
   };
+
+  const handleAskFollowUp = async () => {
+    if (!job) return;
+    const answerText = (answers[current] ?? "").trim();
+    if (answerText.length < 10) {
+      toast.error("Jot a few notes on your answer first — the interviewer needs something to build on.");
+      return;
+    }
+    setAskingFollowUp(true);
+    try {
+      const refined = await generateFollowUp({
+        jobTitle: job.jobTitle,
+        seniority: job.seniority ?? "mid",
+        language: job.language ?? "en",
+        previousQuestion: questions[current],
+        previousAnswer: answerText,
+      });
+      if (!refined) throw new Error("No follow-up returned");
+      const insertAt = current + 1;
+      setQuestions((prev) => {
+        const copy = prev.slice();
+        copy.splice(insertAt, 0, refined);
+        return copy;
+      });
+      setAnswers((prev) => {
+        const copy = prev.slice();
+        copy.splice(insertAt, 0, "");
+        return copy;
+      });
+      // A verbal follow-up keeps the verbal/practical boundary in the same place.
+      if (!isPractical) setVerbalCount((v) => v + 1);
+      setCurrent(insertAt);
+      toast.success("Follow-up added — go deeper.");
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not generate a follow-up. Try again.");
+    } finally {
+      setAskingFollowUp(false);
+    }
+  };
+
 
   const handleNext = async () => {
     if (!job || current >= total - 1) return;
@@ -212,7 +327,7 @@ function InterviewRoom() {
     if (!job) return;
     setFinishing(true);
     try {
-      const results = synthesizeResults(questions, startedAtRef.current);
+      const results = synthesizeResults(questions, answers, verbalCount, startedAtRef.current);
       const { id } = await saveInterviewSession({
         jobTitle: job.jobTitle,
         jobDescription: job.jobDescription,
@@ -256,13 +371,32 @@ function InterviewRoom() {
               {INTERVIEW_LANGUAGES.find((l) => l.value === (job?.language ?? "en"))?.label ?? "English"} · Adaptive AI interviewer
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
-            </span>
-            LIVE
+          <div className="flex items-center gap-2">
+            <div
+              className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${
+                phaseExpired
+                  ? "border-destructive/60 bg-destructive/15 text-destructive"
+                  : phaseRemaining < 60
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                  : "border-border bg-card/60 text-muted-foreground"
+              }`}
+              title={`${isPractical ? "Practical" : "Verbal"} phase limit: ${phaseLimit / 60} min`}
+            >
+              <Timer className="h-3.5 w-3.5" />
+              <span className="tabular-nums">{formatTime(phaseRemaining)}</span>
+              <span className="hidden sm:inline">
+                {isPractical ? "practical" : "verbal"} left
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
+              </span>
+              LIVE
+            </div>
           </div>
+
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
@@ -420,7 +554,13 @@ function InterviewRoom() {
               </p>
             </div>
 
-            <div className="flex items-center justify-between gap-2 border-t border-border/60 pt-4">
+            {phaseExpired && (
+              <div className="mb-3 rounded-lg border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {isPractical ? "Practical" : "Verbal"} time is up. Wrap this answer and move on — in a real interview the panel would too.
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
               <Button
                 variant="ghost"
                 size="sm"
@@ -429,6 +569,20 @@ function InterviewRoom() {
               >
                 <ChevronLeft className="mr-1 h-4 w-4" /> Previous
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleAskFollowUp}
+                disabled={askingFollowUp || advancing}
+                title="Ask the interviewer to probe deeper on this answer"
+              >
+                {askingFollowUp ? (
+                  <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Thinking…</>
+                ) : (
+                  <><HelpCircle className="mr-1 h-4 w-4" /> Ask follow-up</>
+                )}
+              </Button>
+
               {current < total - 1 ? (
                 <Button
                   size="sm"

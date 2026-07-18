@@ -26,6 +26,7 @@ export type Database = {
           job_description: string
           job_title: string
           overall_score: number
+          question_scores: Json
           questions: Json
           user_id: string
         }
@@ -40,6 +41,7 @@ export type Database = {
           job_description: string
           job_title: string
           overall_score: number
+          question_scores?: Json
           questions?: Json
           user_id: string
         }
@@ -54,6 +56,7 @@ export type Database = {
           job_description?: string
           job_title?: string
           overall_score?: number
+          question_scores?: Json
           questions?: Json
           user_id?: string
         }

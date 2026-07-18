@@ -28,6 +28,7 @@ function interviewTypeLabel(value?: string) {
 }
 
 type FeedbackItem = { type: "good" | "warn"; title: string; detail: string };
+type QuestionScore = { question: string; score: number; note: string };
 type SessionRow = {
   id: string;
   job_title: string;
@@ -37,9 +38,11 @@ type SessionRow = {
   filler_count: number;
   filler_breakdown: Record<string, number>;
   feedback: FeedbackItem[];
+  question_scores?: QuestionScore[];
   duration_seconds: number;
   created_at: string;
 };
+
 
 export const Route = createFileRoute("/analytics")({
   ssr: false,
@@ -238,12 +241,49 @@ function Analytics() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-          {/* Feedback list */}
-          <Card className="border-border/60 bg-card/70 p-6 backdrop-blur sm:p-8">
-            <div className="mb-6">
-              <h2 className="text-xl font-bold">Detailed feedback</h2>
-              <p className="text-sm text-muted-foreground">Prioritized coaching notes from this session.</p>
-            </div>
+          <div className="space-y-6">
+            {selected.question_scores && selected.question_scores.length > 0 && (
+              <Card className="border-border/60 bg-card/70 p-6 backdrop-blur sm:p-8">
+                <div className="mb-4">
+                  <h2 className="text-xl font-bold">Per-question scoring</h2>
+                  <p className="text-sm text-muted-foreground">How each answer scored out of 100.</p>
+                </div>
+                <ul className="space-y-4">
+                  {selected.question_scores.map((q, i) => (
+                    <li key={i} className="rounded-lg border border-border/50 bg-background/40 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="min-w-0 flex-1 text-sm font-medium">
+                          <span className="mr-2 text-muted-foreground">Q{i + 1}.</span>
+                          {q.question}
+                        </p>
+                        <span
+                          className={`shrink-0 rounded-md px-2 py-1 text-sm font-semibold tabular-nums ${
+                            q.score >= 80
+                              ? "bg-accent/20 text-accent"
+                              : q.score >= 60
+                              ? "bg-primary/20 text-primary"
+                              : q.score === 0
+                              ? "bg-muted text-muted-foreground"
+                              : "bg-destructive/20 text-destructive"
+                          }`}
+                        >
+                          {q.score}/100
+                        </span>
+                      </div>
+                      <Progress value={q.score} className="mt-3 h-1.5" />
+                      <p className="mt-2 text-xs text-muted-foreground">{q.note}</p>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+
+            <Card className="border-border/60 bg-card/70 p-6 backdrop-blur sm:p-8">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold">Detailed feedback</h2>
+                <p className="text-sm text-muted-foreground">Prioritized coaching notes from this session.</p>
+              </div>
+
             <ul className="divide-y divide-border/60">
               {selected.feedback.map((item, i) => (
                 <li key={i} className="flex gap-4 py-4 first:pt-0 last:pb-0">
@@ -261,7 +301,10 @@ function Analytics() {
                 </li>
               ))}
             </ul>
-          </Card>
+            </Card>
+          </div>
+
+
 
           {/* Session history list */}
           <Card className="border-border/60 bg-card/70 p-4 backdrop-blur">
